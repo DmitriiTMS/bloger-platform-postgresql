@@ -19,7 +19,7 @@ export class UsersController {
 
   @Get()
   async findAll() {
-    return await this.dataSource.query(`SELECT * FROM "user"`);
+    return await this.dataSource.query(`SELECT * FROM "users"`);
   }
 
   @Get(':id')
