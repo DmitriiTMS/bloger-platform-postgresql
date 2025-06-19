@@ -1,7 +1,7 @@
 import { AppModule } from './app.module';
 import { NestFactory } from '@nestjs/core';
 import { CoreConfig } from './core/core.config';
-
+import { appSetup } from './setup/app.setup';
 
 async function bootstrap() {
   // const app = await NestFactory.create(AppModule);
@@ -14,11 +14,11 @@ async function bootstrap() {
   // и уже потом создаём на основе донастроенного модуля наше приложение
   const app = await NestFactory.create(DynamicAppModule);
 
-   // Закрываем контекст, если он больше не нужен
+  // Закрываем контекст, если он больше не нужен
   await appContext.close();
 
-
   console.log('process.env.PORT: ', coreConfig.port);
+  appSetup(app);
   await app.listen(coreConfig.port);
 }
 bootstrap();

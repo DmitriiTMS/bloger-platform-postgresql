@@ -4,11 +4,18 @@ import { DynamicModule, Module } from '@nestjs/common';
 import { UsersModule } from './users/users.module';
 import { CoreConfig } from './core/core.config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { APP_FILTER } from '@nestjs/core';
+import { CustomDomainHttpExceptionsFilter } from './setup/exceptions/filters/custom-domain-exceptions.filter';
 
 
 @Module({
   imports: [CoreModule, configModule],
-  providers: [],
+  providers: [
+    {
+      provide: APP_FILTER,
+      useClass: CustomDomainHttpExceptionsFilter,
+    }
+  ],
 })
 export class AppModule {
   static async forRoot(coreConfig: CoreConfig): Promise<DynamicModule>{
