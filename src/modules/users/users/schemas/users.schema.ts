@@ -1,6 +1,7 @@
 import { CreateUserDto } from '../dto/create-user.dto';
 
 export class UserSchema {
+  id: string;
   login: string;
   hashPassword: string;
   email: string;

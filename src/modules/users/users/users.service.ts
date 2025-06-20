@@ -13,6 +13,7 @@ export class UsersService {
     private usersRepository:UsersRepository
   ) {}
 
+
   async create(createUserDto: CreateUserDto, emailConfirmation?: any){
     const userLogin = await this.usersRepository.findByLogin(createUserDto.login);
     const userEmail = await this.usersRepository.findByEmail(createUserDto.email);
@@ -38,10 +39,6 @@ export class UsersService {
     );
     const createdUser = await this.usersRepository.create(user)   
     return createdUser;
-  }
-
-  findAll() {
-    return `This action returns all users`;
   }
 
  async remove(id: string) {
