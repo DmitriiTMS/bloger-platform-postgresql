@@ -1,7 +1,7 @@
 import { configModule } from './dynamic-config-module';
 import { CoreModule } from './core/core.module';
 import { DynamicModule, Module } from '@nestjs/common';
-import { UsersModule } from './users/users.module';
+import { UsersModule } from './modules/users/users.module';
 import { CoreConfig } from './core/core.config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { APP_FILTER } from '@nestjs/core';
