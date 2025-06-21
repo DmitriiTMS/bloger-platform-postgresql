@@ -6,6 +6,7 @@ import { CoreConfig } from './core/core.config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { APP_FILTER } from '@nestjs/core';
 import { CustomDomainHttpExceptionsFilter } from './setup/exceptions/filters/custom-domain-exceptions.filter';
+import { TestingModule } from './modules/testing/testing.module';
 
 
 @Module({
@@ -20,7 +21,6 @@ import { CustomDomainHttpExceptionsFilter } from './setup/exceptions/filters/cus
 export class AppModule {
   static async forRoot(coreConfig: CoreConfig): Promise<DynamicModule>{
     const modules: any[] = [
-      UsersModule,
       TypeOrmModule.forRootAsync({
         imports:[CoreModule],
         useFactory: (coreConfig: CoreConfig) => {
@@ -36,7 +36,9 @@ export class AppModule {
           }
         },
         inject: [CoreConfig]
-      })
+      }),
+       UsersModule,
+      TestingModule
     ]
     return {
       module: AppModule,

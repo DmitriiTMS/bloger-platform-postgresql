@@ -9,7 +9,7 @@ export class UsersRepository {
 
   async create(user: UserSchema) {
     const createdUser = await this.dataSource.query(
-      `INSERT INTO "users"("login", "email", "password", "createdAt")
+      `INSERT INTO "users"("login", "email", "hashPassword", "createdAt")
       VALUES ($1, $2, $3, $4::timestamp with time zone)
       RETURNING "id", "login", "email", "createdAt" `,
       [user.login, user.email, user.hashPassword, user.createdAt],
@@ -50,9 +50,14 @@ export class UsersRepository {
       throw new NotFoundException(`User с ${id} не найден`);
     }
 
-    return await this.dataSource.query(
-      `DELETE FROM "users" WHERE id = ($1)`,
-      [id],
-    );
+    return await this.dataSource.query(`DELETE FROM "users" WHERE id = ($1)`, [
+      id,
+    ]);
+  }
+
+  async findByLoginOrEmail(loginOrEmail: string) {
+    const query = `SELECT * FROM "users" WHERE email = $1 OR login = $1 LIMIT 1`;
+    const result = await this.dataSource.query(query, [loginOrEmail]);   
+    return result[0] || null;
   }
 }
