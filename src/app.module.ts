@@ -33,6 +33,12 @@ export class AppModule {
             database: coreConfig.db_name,
             autoLoadEntities: false,
             synchronize: false,
+            // ssl: true, ДЛЯ ПОДКЛЮЧЕНИЯ К Neon
+            // extra: {
+            //   ssl: {
+            //     rejectUnauthorized: false
+            //   }
+            // }
           }
         },
         inject: [CoreConfig]

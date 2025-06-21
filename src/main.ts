@@ -19,6 +19,7 @@ async function bootstrap() {
 
   console.log('process.env.PORT: ', coreConfig.port);
   appSetup(app);
+  app.enableCors()
   await app.listen(coreConfig.port);
 }
 bootstrap();
