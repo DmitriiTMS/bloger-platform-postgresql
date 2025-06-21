@@ -28,7 +28,7 @@ export class AuthService {
 
   async loginUser(
     userViewDto: { id: string; login: string },
-    infoDevice: { ip?: string; title?: string },
+    // infoDevice: { ip?: string; title?: string },
   ): Promise<{ accessToken: string; refreshToken: string }> {
     const accessToken = this.accessJwtService.sign({
       userId: userViewDto.id,
@@ -43,7 +43,7 @@ export class AuthService {
     });
 
     await this.refreshTokenRepository.addRefreshToken({ refreshToken });
-    await this.createDeviceUsers(refreshToken, infoDevice.ip!, infoDevice.title!);
+    // await this.createDeviceUsers(refreshToken, infoDevice.ip!, infoDevice.title!);
 
     return {
       accessToken,

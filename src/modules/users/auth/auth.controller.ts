@@ -22,9 +22,11 @@ export class AuthController {
     const { ip } = req;
     const title = req.headers["user-agent"];
 
-    const infoDevice: {ip?: string, title?: string} = {ip, title}
+    // const infoDevice: {ip?: string, title?: string} = {ip, title}
 
-    const resultTokens = await this.authService.loginUser(user, infoDevice);
+    const resultTokens = await this.authService.loginUser(user,
+      // infoDevice
+    );
     res.cookie('refreshToken', resultTokens.refreshToken, {
       httpOnly: true,
       secure: true, // Для HTTPS
