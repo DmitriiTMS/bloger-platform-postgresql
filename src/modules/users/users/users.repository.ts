@@ -85,11 +85,44 @@ export class UsersRepository {
     return result[0] || null;
   }
 
-  //  async findBYCodeEmail(code: string): Promise<UserDocument | null> {
-  //   return await this.userModel
-  //     .findOne({
-  //       'emailConfirmation.confirmationCode': code,
-  //     })
-  //     .lean<UserDocument>();
-  // }
+  async findBYCodeEmail(code: string) {
+    const query = `SELECT * FROM "email_confirmations" WHERE "confirmationCode" = $1`;
+    const result = await this.dataSource.query(query, [code]);
+    return result[0] || null;
+  }
+
+   async findBYUserIdCodeEmail(userId: string) {
+    const query = `SELECT * FROM "email_confirmations" WHERE "userId" = $1`;
+    const result = await this.dataSource.query(query, [userId]);
+    return result[0] || null;
+  }
+
+  async updateUserIsConfirmed(userId: string) {
+    return await this.dataSource.query(
+      `UPDATE "email_confirmations" 
+      SET "isConfirmed" = true 
+      WHERE "userId" = $1`,
+      [userId],
+    );
+  }
+
+  async updateUserСonfirmationCode(userId: string, code: string) {
+    return await this.dataSource.query(
+      `UPDATE "email_confirmations"
+     SET 
+       "confirmationCode" = $1,
+       "expirationDate" = NOW() + INTERVAL '1 hour 30 minutes'  -- Обновляем срок действия
+     WHERE "userId" = $2`,
+      [code, userId],
+    );
+  }
+
+  async updateUserPassword(userId: string, newPasswordHash: string) {
+    // 1. Выполняем обновление пароля
+    return await this.dataSource.query(
+      `UPDATE "users"
+     SET "hashPassword" = $1
+     WHERE id = $2`, [newPasswordHash, userId],
+    );
+  }
 }

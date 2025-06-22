@@ -10,8 +10,8 @@ export class EmailService {
     private configService: ConfigService
 ) {}
 
-  async registerUserAndResendingEmail(email: string, code: string) {
-    await this.mailerService.sendMail({
+  registerUserAndResendingEmail(email: string, code: string) {
+    this.mailerService.sendMail({
       from: this.configService.get('EMAIL'),
       to: email,
       subject: 'Your code is here',
@@ -19,8 +19,8 @@ export class EmailService {
     });
   }
 
-  async passwordRecovery(email: string, recoveryCode: string) {
-    await this.mailerService.sendMail({
+  passwordRecovery(email: string, recoveryCode: string) {
+    this.mailerService.sendMail({
       from: this.configService.get('EMAIL'),
       to: email,
       subject: 'Your code is here',
