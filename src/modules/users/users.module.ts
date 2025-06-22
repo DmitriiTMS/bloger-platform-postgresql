@@ -13,9 +13,13 @@ import { PassportModule } from '@nestjs/passport';
 import { JwtService } from '@nestjs/jwt';
 import { provideTokens } from './auth/settings/provide-tokens';
 import { RefreshTokenRepository } from './auth/repositories/refresh-token.repository';
-import { DevicesRepository } from './auth/repositories/devices.repository';
+import { DevicesRepository } from './devices/devices.repository';
 import { LocalStrategy } from './auth/strategy/local.strategy';
 import { JwtStrategy } from './auth/strategy/jwt.strategy';
+import { AuthQueryRepository } from './auth/auth-query.repository';
+import { ThrottlerModule } from '@nestjs/throttler';
+import { DevicesController } from './devices/devices.controller';
+import { DevicesService } from './devices/devices.service';
 
 const adapters = [
   UsersService,
@@ -23,8 +27,10 @@ const adapters = [
   UsersQueryRepository,
   AuthService,
   AuthRepository,
+  AuthQueryRepository,
   EmailService,
   RefreshTokenRepository,
+  DevicesService,
   DevicesRepository,
   LocalStrategy,
   JwtStrategy,
@@ -55,8 +61,16 @@ const adapters = [
       },
       inject: [ConfigService],
     }),
+    ThrottlerModule.forRoot({
+      throttlers: [
+        {
+          ttl: 10000, // Время окна в секундах
+          limit: 5, // Максимум 5 запросов
+        },
+      ],
+    }),
   ],
-  controllers: [UsersController, AuthController],
+  controllers: [UsersController, AuthController, DevicesController],
   providers: [
     ...adapters,
     {
@@ -64,7 +78,7 @@ const adapters = [
       useFactory: (configService: ConfigService): JwtService => {
         return new JwtService({
           secret: configService.get('ACCESS_TOKEN_SECRET'),
-          signOptions: { expiresIn: '6m' },
+          signOptions: { expiresIn: '10s' },
           verifyOptions: { ignoreExpiration: false },
         });
       },
@@ -75,7 +89,7 @@ const adapters = [
       useFactory: (configService: ConfigService): JwtService => {
         return new JwtService({
           secret: configService.get('REFRESH_TOKEN_SECRET'),
-          signOptions: { expiresIn: '10m' },
+          signOptions: { expiresIn: '20s' },
           verifyOptions: { ignoreExpiration: false },
         });
       },

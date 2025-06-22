@@ -15,7 +15,7 @@ import { UserViewDto } from '../users/dto/user-view.dto';
 import { provideTokens } from './settings/provide-tokens';
 import { JwtService, TokenExpiredError } from '@nestjs/jwt';
 import { RefreshTokenRepository } from './repositories/refresh-token.repository';
-import { DevicesRepository } from './repositories/devices.repository';
+import { DevicesRepository } from '../devices/devices.repository';
 import { RegistrationConfirmationDto } from './dto/registration-confirmation.dto';
 import { CustomDomainException } from '../../../setup/exceptions/custom-domain.exception';
 import { DomainExceptionCode } from '../../../setup/exceptions/filters/constants';
@@ -39,7 +39,7 @@ export class AuthService {
 
   async loginUser(
     userViewDto: { id: string; login: string },
-    // infoDevice: { ip?: string; title?: string },
+    infoDevice: { ip?: string; title?: string },
   ): Promise<{ accessToken: string; refreshToken: string }> {
     const accessToken = this.accessJwtService.sign({
       userId: userViewDto.id,
@@ -54,7 +54,7 @@ export class AuthService {
     });
 
     await this.refreshTokenRepository.addRefreshToken({ refreshToken });
-    // await this.createDeviceUsers(refreshToken, infoDevice.ip!, infoDevice.title!);
+    await this.createDeviceUsers(refreshToken, infoDevice.ip!, infoDevice.title!);
 
     return {
       accessToken,
@@ -98,7 +98,6 @@ export class AuthService {
   }
 
   async registerUser(userCreateDto: CreateUserDto) {
-  
     const code = randomUUID();
 
     const emailConfirmation = EmailConfirmationCodeSchema.createInstance({
@@ -111,12 +110,12 @@ export class AuthService {
     });
 
     await this.usersService.create(userCreateDto, emailConfirmation);
-    this.emailService.registerUserAndResendingEmail(userCreateDto.email,code);
-     
+    this.emailService.registerUserAndResendingEmail(userCreateDto.email, code);
   }
 
-  async registrationEmailResending(regEmailResDto: RegistrationEmailEesendingDto) {
-    
+  async registrationEmailResending(
+    regEmailResDto: RegistrationEmailEesendingDto,
+  ) {
     const user = await this.usersRepository.findByEmail(regEmailResDto.email);
     if (user.length === 0) {
       throw new CustomDomainException({
@@ -129,7 +128,9 @@ export class AuthService {
       });
     }
 
-    const isConfirmCode = await this.usersRepository.findBYUserIdCodeEmail(user[0].id);
+    const isConfirmCode = await this.usersRepository.findBYUserIdCodeEmail(
+      user[0].id,
+    );
 
     if (isConfirmCode.isConfirmed) {
       throw new CustomDomainException({
@@ -143,9 +144,14 @@ export class AuthService {
     }
 
     const newConfirmationCode = randomUUID();
-    await this.usersRepository.updateUserСonfirmationCode(user[0].id,newConfirmationCode);
-    this.emailService.registerUserAndResendingEmail(regEmailResDto.email, newConfirmationCode);
-    
+    await this.usersRepository.updateUserСonfirmationCode(
+      user[0].id,
+      newConfirmationCode,
+    );
+    this.emailService.registerUserAndResendingEmail(
+      regEmailResDto.email,
+      newConfirmationCode,
+    );
   }
 
   async passwordRecovery(email: string) {
@@ -158,12 +164,17 @@ export class AuthService {
     }
 
     const recoveryCode = randomUUID();
-    await this.usersRepository.updateUserСonfirmationCode(user[0].id, recoveryCode);
+    await this.usersRepository.updateUserСonfirmationCode(
+      user[0].id,
+      recoveryCode,
+    );
     await this.emailService.passwordRecovery(email, recoveryCode);
   }
 
-   async newPassword(newPasswordDto: NewPasswordDto) {
-    const user = await this.usersRepository.findBYCodeEmail(newPasswordDto.recoveryCode);
+  async newPassword(newPasswordDto: NewPasswordDto) {
+    const user = await this.usersRepository.findBYCodeEmail(
+      newPasswordDto.recoveryCode,
+    );
     if (!user) {
       throw new CustomDomainException({
         errorsMessages: `User by ${newPasswordDto.recoveryCode} not found`,
@@ -183,7 +194,7 @@ export class AuthService {
     }
 
     const passwordHash = await Bcrypt.generateHash(newPasswordDto.newPassword);
-    await this.usersRepository.updateUserPassword(user.userId, passwordHash );
+    await this.usersRepository.updateUserPassword(user.userId, passwordHash);
   }
 
   async createDeviceUsers(refreshToken: string, ip: string, title: string) {
@@ -211,65 +222,68 @@ export class AuthService {
     return true;
   }
 
+  async refreshToken(refreshToken: string) {
+    if (!refreshToken) {
+      throw new UnauthorizedException('Refresh token не передан в cookies');
+    }
 
-  //   async refreshToken(refreshToken: string) {
-  //   if (!refreshToken) {
-  //     throw new UnauthorizedException('Refresh token не передан в cookies');
-  //   }
+    const verifyRefreshToken = await this.verifyAndDecodedRefreshToken(refreshToken);
 
-  //   const verifyRefreshToken = await this.verifyAndDecodedRefreshToken(refreshToken);
+    const newAccessToken = this.accessJwtService.sign({
+      userId: verifyRefreshToken.userId,
+      userLogin: verifyRefreshToken.userLogin,
+    });
 
-  //   const newAccessToken = this.accessJwtService.sign({
-  //     userId: verifyRefreshToken.userId,
-  //     userLogin: verifyRefreshToken.userLogin,
-  //   });
+    const newRefreshToken = this.refreshJwtService.sign({
+      userId: verifyRefreshToken.userId,
+      userLogin: verifyRefreshToken.userLogin,
+      deviceId: verifyRefreshToken.deviceId,
+    });
 
-  //   const newRefreshToken = this.refreshJwtService.sign({
-  //     userId: verifyRefreshToken.userId,
-  //     userLogin: verifyRefreshToken.userLogin,
-  //     deviceId: verifyRefreshToken.deviceId,
-  //   });
+    const token = await this.refreshTokenRepository.findByRefreshToken(refreshToken);
+    if (!token) {
+      throw new UnauthorizedException('REFRESH_TOKEN_NOT_FOUND');
+    }
 
-  //   const token = await this.refreshTokenRepository.findByRefreshToken(refreshToken);
-  //   if (!token) {
-  //     throw new UnauthorizedException('REFRESH_TOKEN_NOT_FOUND');
-  //   }
+    await this.refreshTokenRepository.deleteRefreshToken(token.id);
+    await this.refreshTokenRepository.addRefreshToken({
+      refreshToken: newRefreshToken,
+    });
 
-  //   await this.refreshTokenRepository.deleteRefreshToken(token._id.toString());
-  //   await this.refreshTokenRepository.addRefreshToken({refreshToken: newRefreshToken});
+    const deviceIdByRefreshTokenDb = await this.devicesRepository.findByDevice(
+      verifyRefreshToken.deviceId,
+    );
+    if (!deviceIdByRefreshTokenDb) {
+      throw new UnauthorizedException('Не найден deviceId');
+    }
 
-  //   const deviceIdByRefreshTokenDb = await this.devicesRepository.findByDevice(verifyRefreshToken.deviceId);
-  //   if (!deviceIdByRefreshTokenDb) {
-  //      throw new UnauthorizedException('Не найден deviceId');
-  //   }
+    const decodeNewRefreshToken = await this.refreshJwtService.decode(newRefreshToken);
+    await this.devicesRepository.updateSessionLastActiveDate(
+      verifyRefreshToken.deviceId!,
+      new Date(decodeNewRefreshToken.exp! * 1000).toISOString(), // новый срок истечения
+      new Date(decodeNewRefreshToken.iat! * 1000).toISOString(), // новое lastActiveDate
+      refreshToken,
+      newRefreshToken,
+    );
 
-  //   const decodeNewRefreshToken = await this.refreshJwtService.decode(newRefreshToken);
-  //   await this.devicesRepository.updateSessionLastActiveDate(
-  //     verifyRefreshToken.deviceId!,
-  //     new Date(decodeNewRefreshToken.exp! * 1000).toISOString(), // новый срок истечения
-  //     new Date(decodeNewRefreshToken.iat! * 1000).toISOString(),// новое lastActiveDate
-  //     refreshToken,
-  //     newRefreshToken,
-  //   );
+    return { newAccessToken, newRefreshToken };
+  }
 
-  //   return { newAccessToken, newRefreshToken };
-  // }
+   async logout(refreshToken: string) {
+    if (!refreshToken) {
+      throw new UnauthorizedException('Refresh token не передан в cookies');
+    }
 
-  //  async logout(refreshToken: string) {
-  //   if (!refreshToken) {
-  //     throw new UnauthorizedException('Refresh token не передан в cookies');
-  //   }
+    const decodedRefreshToken = await this.verifyAndDecodedRefreshToken(refreshToken);
 
-  //   const decodedRefreshToken = await this.verifyAndDecodedRefreshToken(refreshToken);
+    const token = await this.refreshTokenRepository.findByRefreshToken(refreshToken);
+    if (!token) {
+      throw new UnauthorizedException('REFRESH_TOKEN_NOT_FOUND');
+    }
 
-  //   const token = await this.refreshTokenRepository.findByRefreshToken(refreshToken);
-  //   if (!token) {
-  //     throw new UnauthorizedException('REFRESH_TOKEN_NOT_FOUND');
-  //   }
-
-  //   await this.refreshTokenRepository.deleteRefreshToken(token._id.toString());
-  //   await this.devicesRepository.deleteSessionByDeviceId(decodedRefreshToken.deviceId)
-  // }
+    await this.refreshTokenRepository.deleteRefreshToken(token.id);
+    await this.devicesRepository.deleteSessionByDeviceId(decodedRefreshToken.deviceId)
+  }
 
   async verifyAndDecodedRefreshToken(refreshToken: string) {
     try {

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { GetUsersQueryParams } from './dto/paginate/get-users-query-params.input-dto';
@@ -9,7 +9,9 @@ import { PaginatedViewDto } from '../../../core/paginate/base.paginate.view-dto'
 export class UsersQueryRepository {
   constructor(@InjectDataSource() private dataSource: DataSource) {}
 
-  async findAll(query: GetUsersQueryParams): Promise<PaginatedViewDto<UserViewDto[]>> {
+  async findAll(
+    query: GetUsersQueryParams,
+  ): Promise<PaginatedViewDto<UserViewDto[]>> {
     // Базовый запрос
     let baseSQLquery = 'SELECT * FROM "users"';
     const params: string[] = [];
@@ -72,67 +74,19 @@ export class UsersQueryRepository {
     });
   }
 
-  // async findAll(query: GetUsersQueryParams): Promise<PaginatedViewDto<UserViewDto[]>> {
-  //   // Базовый запрос
-  //   let baseSQLquery = 'SELECT id, login, email, "createdAt" FROM "users"';
-  //   const params: string[] = [];
-  //   const conditions: string[] = [];
+  async getByIdOrNotFoundFail(id: string) {
+    const query = `
+    SELECT * FROM "users"
+    WHERE id = $1
+  `;
 
-  //   // Добавляем условия поиска
-  //   if (query.searchLoginTerm) {
-  //     conditions.push('login ILIKE $' + (params.length + 1));
-  //     params.push(`%${query.searchLoginTerm}%`);
-  //   }
+    const parameters = [id];
+    const result = await this.dataSource.query(query, parameters);
 
-  //   if (query.searchEmailTerm) {
-  //     conditions.push('email ILIKE $' + (params.length + 1));
-  //     params.push(`%${query.searchEmailTerm}%`);
-  //   }
-
-  //   // Формируем WHERE часть
-  //   if (conditions.length > 0) {
-  //     baseSQLquery += ' WHERE ' + conditions.join(' OR ');
-  //   }
-
-  //   // Сортировка
-  //   const sortBy = query.sortBy !== 'createdAt' ? query.sortBy : 'createdAt';
-  //   const sortDirection = query.sortDirection === 'desc' ? 'DESC' : 'ASC';
-  //   baseSQLquery += ` ORDER BY "${sortBy}" "${sortDirection}"`;
-
-  //   // Получаем общее количество
-  //   const countResult = await this.dataSource.query(
-  //     'SELECT COUNT(*) FROM "users"' + (conditions.length > 0 ? ' WHERE ' + conditions.join(' OR ') : ''),
-  //     params
-  //   );
-  //   const totalCount = parseInt(countResult[0].count, 10);
-
-  //   // Пагинация
-  //   const pageSize = query.pageSize ? parseInt(query.pageSize.toString(), 10) : 10;
-  //   const pageNumber = query.pageNumber ? parseInt(query.pageNumber.toString(), 10) : 1;
-  //   const offset = (pageNumber - 1) * pageSize;
-
-  //   baseSQLquery += ` LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
-  //   params.push(pageSize.toString(), offset.toString());
-
-  //   // Выполняем запрос
-  //   const users = await this.dataSource.query(baseSQLquery, params);
-
-  //   // Форматируем результат
-  //   const items = users.map(user => ({
-  //     id: user.id,
-  //     login: user.login,
-  //     email: user.email,
-  //     createdAt: user.createdAt.toISOString()
-  //   }));
-
-  //   return {
-  //     pagesCount: Math.ceil(totalCount / pageSize),
-  //     page: pageNumber,
-  //     pageSize,
-  //     totalCount,
-  //     items
-  //   };
-  // }
-
- 
+    if (result.length === 0) {
+      throw new NotFoundException('user not found');
+    }
+    const user = result[0]; // Берём первую запись (если id уникален)
+    return UserViewDto.mapToView(user);
+  }
 }
