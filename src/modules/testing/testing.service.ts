@@ -7,7 +7,8 @@ export class TestingService {
   constructor(@InjectDataSource() private dataSource: DataSource) {}
 
   async deleteAll() {
-    await this.dataSource.query('TRUNCATE TABLE "users"');
+    await this.dataSource.query('TRUNCATE TABLE "email_confirmations" CASCADE');
+    await this.dataSource.query('TRUNCATE TABLE "users" CASCADE');
     await this.dataSource.query('TRUNCATE TABLE "devices"');
     await this.dataSource.query('TRUNCATE TABLE "refresh_tokens"');
   }

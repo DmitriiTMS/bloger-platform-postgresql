@@ -4,6 +4,7 @@ import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { Response, Request as RequestExpress } from 'express';
 import { ExtractUserFromRequest } from './decorators/extract-user-from-request.decorator';
+import { RegistrationConfirmationDto } from './dto/registration-confirmation.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -33,6 +34,13 @@ export class AuthController {
       sameSite: 'strict' // Защита от CSRF
     });
     return {accessToken: resultTokens.accessToken}
+  }
+
+  
+  @Post('registration-confirmation')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async registrationConfirmation(@Body() body: RegistrationConfirmationDto) {
+    // return await this.authService.registrationConfirmation(body)
   }
 
   @Post('registration')

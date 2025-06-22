@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
 import { UserSchema } from './schemas/users.schema';
 import { Bcrypt } from './utils/bcrypt';
 import { UsersRepository } from './users.repository';
@@ -35,9 +34,9 @@ export class UsersService {
         login: createUserDto.login,
         password: passwordHash,
       },
-      emailConfirmation,
     );
-    const createdUser = await this.usersRepository.create(user)   
+    const createdUser = await this.usersRepository.create(user, emailConfirmation)   
+
     return createdUser;
   }
 

@@ -1,4 +1,9 @@
-import { BadRequestException, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import { randomUUID } from 'crypto';
 import { add } from 'date-fns/add';
@@ -11,6 +16,10 @@ import { provideTokens } from './settings/provide-tokens';
 import { JwtService, TokenExpiredError } from '@nestjs/jwt';
 import { RefreshTokenRepository } from './repositories/refresh-token.repository';
 import { DevicesRepository } from './repositories/devices.repository';
+import { RegistrationConfirmationDto } from './dto/registration-confirmation.dto';
+import { CustomDomainException } from '../../../setup/exceptions/custom-domain.exception';
+import { DomainExceptionCode } from '../../../setup/exceptions/filters/constants';
+import { EmailConfirmationCodeSchema } from '../users/schemas/email-confirmations.schema';
 
 @Injectable()
 export class AuthService {
@@ -23,7 +32,7 @@ export class AuthService {
     @Inject(provideTokens.REFRESH_TOKEN_STRATEGY_INJECT_TOKEN)
     private refreshJwtService: JwtService,
     private refreshTokenRepository: RefreshTokenRepository,
-    private devicesRepository: DevicesRepository
+    private devicesRepository: DevicesRepository,
   ) {}
 
   async loginUser(
@@ -51,16 +60,51 @@ export class AuthService {
     };
   }
 
+  // async registrationConfirmation(regConfirmDto: RegistrationConfirmationDto) {
+  //   const user = await this.usersRepository.findBYCodeEmail(regConfirmDto.code);
+  //   if (!user) {
+  //     throw new CustomDomainException({
+  //       errorsMessages: `User by ${regConfirmDto.code} not found`,
+  //       customCode: DomainExceptionCode.NotFound,
+  //     });
+  //   }
+
+  //   if (user.emailConfirmation.isConfirmed) {
+  //     throw new CustomDomainException({
+  //       errorsMessages: [
+  //         {
+  //           message: 'Confirmation code confirmed',
+  //           field: 'code',
+  //         },
+  //       ],
+  //     });
+  //   }
+
+  //   if (user.emailConfirmation.expirationDate < new Date()) {
+  //     throw new CustomDomainException({
+  //       errorsMessages: [
+  //         {
+  //           message: 'Confirmation recoveryCode expired',
+  //           field: 'code',
+  //         },
+  //       ],
+  //     });
+  //   }
+
+  //   await this.usersRepository.updateUserIsConfirmed(user._id.toString());
+  // }
+
   async registerUser(userCreateDto: CreateUserDto) {
     const code = randomUUID();
-    const emailConfirmation = {
+
+    const emailConfirmation = EmailConfirmationCodeSchema.createInstance({
       confirmationCode: code,
       expirationDate: add(new Date(), {
         hours: 1,
         minutes: 30,
       }),
       isConfirmed: false,
-    };
+    });
 
     await this.usersService.create(userCreateDto, emailConfirmation);
     await this.emailService.registerUserAndResendingEmail(
@@ -70,7 +114,8 @@ export class AuthService {
   }
 
   async createDeviceUsers(refreshToken: string, ip: string, title: string) {
-    const decodeRefreshToken = await this.verifyAndDecodedRefreshToken(refreshToken);
+    const decodeRefreshToken =
+      await this.verifyAndDecodedRefreshToken(refreshToken);
 
     if (!ip || !title) {
       throw new BadRequestException('IP или title не переданы');
@@ -93,7 +138,7 @@ export class AuthService {
     return true;
   }
 
-async verifyAndDecodedRefreshToken(refreshToken: string) {
+  async verifyAndDecodedRefreshToken(refreshToken: string) {
     try {
       // 1. Проверяем токен
       const decodeRefreshToken =
@@ -114,7 +159,7 @@ async verifyAndDecodedRefreshToken(refreshToken: string) {
 
   async validateUser(loginOrEmail: string, password: string) {
     const user = await this.usersRepository.findByLoginOrEmail(loginOrEmail);
-    
+
     if (!user) {
       return null;
     }

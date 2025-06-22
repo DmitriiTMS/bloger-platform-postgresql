@@ -2,12 +2,16 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { UserSchema } from './schemas/users.schema';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
+import { EmailConfirmationCodeSchema } from './schemas/email-confirmations.schema';
 
 @Injectable()
 export class UsersRepository {
   constructor(@InjectDataSource() private dataSource: DataSource) {}
 
-  async create(user: UserSchema) {
+  async create(
+    user: UserSchema,
+    emailConfirmation?: EmailConfirmationCodeSchema,
+  ) {
     const createdUser = await this.dataSource.query(
       `INSERT INTO "users"("login", "email", "hashPassword", "createdAt")
       VALUES ($1, $2, $3, $4::timestamp with time zone)
@@ -15,6 +19,26 @@ export class UsersRepository {
       [user.login, user.email, user.hashPassword, user.createdAt],
     );
 
+    const userId = createdUser[0].id;
+    const confirmationInsertQuery = `  
+            INSERT INTO "email_confirmations" (  
+                "userId",  
+                "confirmationCode",  
+                "expirationDate",  
+                "isConfirmed",
+                "createdAt"
+            ) VALUES ($1, $2, $3, $4, $5::timestamp with time zone);  
+        `;
+
+    const confirmationValues = [
+      userId,
+      emailConfirmation?.confirmationCode || null,
+      emailConfirmation?.expirationDate || null,
+      emailConfirmation?.isConfirmed,
+      emailConfirmation?.createdAt || null,
+    ];
+
+    await this.dataSource.query(confirmationInsertQuery, confirmationValues);
     return {
       id: createdUser[0]['id'],
       login: createdUser[0]['login'],
@@ -57,7 +81,15 @@ export class UsersRepository {
 
   async findByLoginOrEmail(loginOrEmail: string) {
     const query = `SELECT * FROM "users" WHERE email = $1 OR login = $1 LIMIT 1`;
-    const result = await this.dataSource.query(query, [loginOrEmail]);   
+    const result = await this.dataSource.query(query, [loginOrEmail]);
     return result[0] || null;
   }
+
+  //  async findBYCodeEmail(code: string): Promise<UserDocument | null> {
+  //   return await this.userModel
+  //     .findOne({
+  //       'emailConfirmation.confirmationCode': code,
+  //     })
+  //     .lean<UserDocument>();
+  // }
 }

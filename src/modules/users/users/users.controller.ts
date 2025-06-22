@@ -18,7 +18,7 @@ import { GetUsersQueryParams } from './dto/paginate/get-users-query-params.input
 import { PaginatedViewDto } from '../../../core/paginate/base.paginate.view-dto';
 import { UserViewDto } from './dto/user-view.dto';
 
-@Controller('users')
+@Controller('sa/users')
 @UseGuards(BasicAuthGuard)
 export class UsersController {
   constructor(
