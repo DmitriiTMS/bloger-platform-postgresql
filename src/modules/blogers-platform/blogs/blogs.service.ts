@@ -7,15 +7,15 @@ import { BlogsRepository } from './repositories/blogs.repository';
 export class BlogsService {
   constructor(private blogsRepository: BlogsRepository) {}
 
-  async createBlog(createBlogDto: CreateBlogDto) {
+  async createBlog(createBlogDto: CreateBlogDto): Promise<number> {
     const blog = BlogsSchema.createInstance({
       name: createBlogDto.name,
       description: createBlogDto.description,
       websiteUrl: createBlogDto.websiteUrl,
     });
 
-    const cretedBlog = await this.blogsRepository.create(blog);
-    return cretedBlog;
+    const blogId = await this.blogsRepository.create(blog);
+    return blogId;
 
   }
 }
