@@ -3,10 +3,16 @@ import { CreateBlogDto } from './dto/create-blog.dto';
 import { BlogsSchema } from './schemas/blogs.schema';
 import { BlogsRepository } from './repositories/blogs.repository';
 import { UpdateBlogDto } from './dto/update-blog.dto';
+import { CreatePostDto } from '../posts/dto/create-post.dto';
+import { PostsService } from '../posts/posts.service';
+
 
 @Injectable()
 export class BlogsService {
-  constructor(private blogsRepository: BlogsRepository) {}
+  constructor(
+    private blogsRepository: BlogsRepository,
+    private postsService: PostsService
+  ) {}
 
   async createBlog(createBlogDto: CreateBlogDto): Promise<number> {
     const blog = BlogsSchema.createInstance({
@@ -19,13 +25,22 @@ export class BlogsService {
     return blogId;
   }
 
-  async updateBlog(id: string, blogDto: UpdateBlogDto) {
+  async updateBlog(id: number, blogDto: UpdateBlogDto) {
     const blogId = await this.blogsRepository.getByIdOrNotFoundFail(id);
     await this.blogsRepository.updateBlog(blogId, blogDto);
   }
 
-  async deleteBlog(id: string) {
+  async deleteBlog(id: number) {
     const blogId = await this.blogsRepository.getByIdOrNotFoundFail(id);
     await this.blogsRepository.delete(blogId);
   }
+
+  async createPostByBlogId(
+    blogId: number,
+    postByBlogIdDto: CreatePostDto,
+  ):Promise<number> {
+    const postData = { blogId, postByBlogIdDto}
+    return await this.postsService.createPost(postData);
+  }
+
 }

@@ -4,7 +4,11 @@ import { BlogsSchema } from '../schemas/blogs.schema';
 import { CustomDomainException } from '../../../../setup/exceptions/custom-domain.exception';
 import { DomainExceptionCode } from '../../../../setup/exceptions/filters/constants';
 import { UpdateBlogDto } from '../dto/update-blog.dto';
+import { Blog } from '../types/blogs-types';
+import { Injectable } from '@nestjs/common';
 
+
+@Injectable()
 export class BlogsRepository {
   constructor(@InjectDataSource() private dataSource: DataSource) {}
 
@@ -17,7 +21,7 @@ export class BlogsRepository {
         RETURNING "id"
     `;
 
-    const result = await this.dataSource.query(query, [
+    const result = await this.dataSource.query<Array<{id: number}>>(query, [
       blog.name,
       blog.description,
       blog.websiteUrl,
@@ -32,32 +36,7 @@ export class BlogsRepository {
     return result[0].id;
   }
 
-  async getByIdOrNotFoundFail(blogId: string) {
-    // 1. Проверяем, что ID является числом
-    if (!/^\d+$/.test(blogId)) {
-      throw new CustomDomainException({
-        errorsMessages: [
-          {
-            message: `Invalid blog ID == ${blogId} format`,
-            field: 'id',
-          },
-        ],
-      });
-    }
-
-    // 2. Преобразуем в число и проверяем диапазон
-    const idNum = parseInt(blogId, 10);
-    if (idNum <= 0 || idNum > 2147483647) {
-      // PostgreSQL INTEGER max value
-      throw new CustomDomainException({
-        errorsMessages: [
-          {
-            message: `Blog ${blogId} out of valid range`,
-            field: 'id',
-          },
-        ],
-      });
-    }
+  async getByIdOrNotFoundFail(blogId: number):Promise<number> {
 
     const query = `SELECT id FROM "blogs" WHERE id = $1`;
     const blog = await this.dataSource.query(query, [blogId]);
@@ -69,6 +48,19 @@ export class BlogsRepository {
       });
     }
     return blog[0].id;
+  }
+
+  async getBlogById(blogId: number): Promise<Blog> {
+    const query = `SELECT id FROM "blogs" WHERE id = $1`;
+    const blog = await this.dataSource.query(query, [blogId]);
+
+    if (!blog || blog.length === 0) {
+      throw new CustomDomainException({
+        errorsMessages: `Blog by ${blogId} not found`,
+        customCode: DomainExceptionCode.NotFound,
+      });
+    }
+    return blog[0];
   }
 
   async updateBlog(blogId: number, updateBlogDto: UpdateBlogDto) {
