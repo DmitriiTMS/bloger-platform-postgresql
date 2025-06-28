@@ -8,6 +8,7 @@ import {
   Param,
   Post,
   Put,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { BasicAuthGuard } from '../../../modules/users/users/guards/basic-auth.guard';
@@ -24,6 +25,8 @@ import { UpdatePostDto } from '../posts/dto/update-post.dto';
 import { UpdatePostParamsDto } from './dto/param/update-post-param.dto';
 import { PostsService } from '../posts/posts.service';
 import { UpdatePostByBlogId } from '../posts/types/posts-types';
+import { GetBlogsQueryParams } from './paginate/get-blogs-query-params';
+import { GetPostsQueryParams } from '../posts/paginate/get-posts-query-params.input-dto';
 
 @UseGuards(BasicAuthGuard)
 @Controller('sa/blogs')
@@ -36,8 +39,19 @@ export class BlogsController {
   ) {}
 
   @Get()
-  getAllBlogs() {
-    return 'getAllBlogs';
+  @HttpCode(HttpStatus.OK)
+  async getAllBlogs(@Query() query: GetBlogsQueryParams) {
+    return await this.blogsQueryRepository.getAll(query)
+  }
+
+  @Get(':blogId/posts')
+  @HttpCode(HttpStatus.OK)
+  async getAllPostsForBlogId(
+    @Param() param: BlogIdParamDto,
+    @Query() query: GetPostsQueryParams,
+  ) {
+    await this.blogsQueryRepository.getBlogByIdOrNotFoundFail(param.blogId)
+    return await this.postsQueryRepository.getAllPostsByblogId(param.blogId, query)
   }
 
   @Post()
@@ -89,5 +103,17 @@ export class BlogsController {
       postId: param.postId,
     };
     return await this.postsService.updatePostBYBlogId(dataForUpdatePost);
+  }
+
+  @Delete(':blogId/posts/:postId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deletePostByBlogId(
+    @Param() param: UpdatePostParamsDto
+  ) {
+    const dataForDeletePost: UpdatePostParamsDto = {
+      blogId: param.blogId,
+      postId: param.postId,
+    };
+    return await this.postsService.deletePostByBlogId(dataForDeletePost);
   }
 }

@@ -2,7 +2,9 @@ import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { Post } from '../types/posts-types';
 import { Injectable } from '@nestjs/common';
-
+import { CustomDomainException } from 'src/setup/exceptions/custom-domain.exception';
+import { DomainExceptionCode } from 'src/setup/exceptions/filters/constants';
+import { UpdatePostDto } from '../dto/update-post.dto';
 
 @Injectable()
 export class PostsRepository {
@@ -30,5 +32,38 @@ export class PostsRepository {
     }
 
     return result[0].id;
+  }
+
+  async getPostByIdOrNotFoundFail(postId: number) {
+    const query = `SELECT id FROM "posts" WHERE id = $1`;
+    const post = await this.dataSource.query(query, [postId]);
+
+    if (!post || post.length === 0) {
+      throw new CustomDomainException({
+        errorsMessages: `Post by id == ${postId} not found`,
+        customCode: DomainExceptionCode.NotFound,
+      });
+    }
+    return post[0];
+  }
+
+  async updatePost(postId: number, updatePostDto: UpdatePostDto) {
+    const query = `
+        UPDATE "posts"
+        SET "title" = $1, "shortDescription" = $2, "content" = $3
+        WHERE id = $4
+    `;
+
+    await this.dataSource.query(query, [
+      updatePostDto.title,
+      updatePostDto.shortDescription,
+      updatePostDto.content,
+      postId,
+    ]);
+  }
+
+  async delete(postId: number) {
+    const query = `DELETE FROM "posts" WHERE id = $1`;
+    await this.dataSource.query(query, [postId]);
   }
 }

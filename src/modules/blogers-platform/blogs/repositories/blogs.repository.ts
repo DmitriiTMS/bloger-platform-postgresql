@@ -50,7 +50,7 @@ export class BlogsRepository {
     return blog[0].id;
   }
 
-  async getBlogById(blogId: number): Promise<Blog> {
+  async getBlogByIdOrNotFoundFail(blogId: number): Promise<Blog> {
     const query = `SELECT id FROM "blogs" WHERE id = $1`;
     const blog = await this.dataSource.query(query, [blogId]);
 

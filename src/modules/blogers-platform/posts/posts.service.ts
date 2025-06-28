@@ -3,6 +3,7 @@ import { CreatePostDto } from './dto/create-post.dto';
 import { BlogsRepository } from '../blogs/repositories/blogs.repository';
 import { Post, UpdatePostByBlogId } from './types/posts-types';
 import { PostsRepository } from './repository/posts.repository';
+import { UpdatePostParamsDto } from '../blogs/dto/param/update-post-param.dto';
 
 @Injectable()
 export class PostsService {
@@ -15,7 +16,7 @@ export class PostsService {
     blogId: number;
     postByBlogIdDto: CreatePostDto;
   }):Promise<number> {
-    const blog = await this.blogsRepository.getBlogById(postData.blogId);
+    const blog = await this.blogsRepository.getBlogByIdOrNotFoundFail(postData.blogId);
 
     const post: Post = {
       title: postData.postByBlogIdDto.title,
@@ -31,8 +32,17 @@ export class PostsService {
   }
 
   async updatePostBYBlogId(dataForUpdatePost: UpdatePostByBlogId) {
-    console.log(dataForUpdatePost);
-    
-    return dataForUpdatePost
+    await this.blogsRepository.getBlogByIdOrNotFoundFail(dataForUpdatePost.blogId)
+    await this.postsRepository.getPostByIdOrNotFoundFail(dataForUpdatePost.postId)
+
+    const { blogId, postId, ...body } = dataForUpdatePost;
+    await this.postsRepository.updatePost(postId, body)
+
+  }
+
+   async deletePostByBlogId(dataForUpdatePost: UpdatePostParamsDto) {
+    await this.blogsRepository.getBlogByIdOrNotFoundFail(dataForUpdatePost.blogId)
+    await this.postsRepository.getPostByIdOrNotFoundFail(dataForUpdatePost.postId)
+    await this.postsRepository.delete(dataForUpdatePost.postId)
   }
 }
