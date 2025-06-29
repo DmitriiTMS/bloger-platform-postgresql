@@ -7,7 +7,7 @@ export class UserSchema {
   email: string;
   createdAt: string;
 
-  static createInstance(dto: CreateUserDto, emailConfirmation?: any): UserSchema {
+  static createInstance(dto: CreateUserDto): UserSchema {
     const user = new this();
     user.login = dto.login;
     user.email = dto.email;

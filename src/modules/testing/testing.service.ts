@@ -11,5 +11,7 @@ export class TestingService {
     await this.dataSource.query('TRUNCATE TABLE "users" CASCADE');
     await this.dataSource.query('TRUNCATE TABLE "devices"');
     await this.dataSource.query('TRUNCATE TABLE "refresh_tokens"');
+    await this.dataSource.query('TRUNCATE TABLE "posts" CASCADE');
+    await this.dataSource.query('TRUNCATE TABLE "blogs" CASCADE');
   }
 }
