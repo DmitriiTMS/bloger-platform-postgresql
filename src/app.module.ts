@@ -7,7 +7,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { APP_FILTER } from '@nestjs/core';
 import { CustomDomainHttpExceptionsFilter } from './setup/exceptions/filters/custom-domain-exceptions.filter';
 import { TestingModule } from './modules/testing/testing.module';
-
+import { BlogersPlatformModule } from './modules/blogers-platform/blogers-platform.module';
 
 @Module({
   imports: [CoreModule, configModule],
@@ -15,14 +15,14 @@ import { TestingModule } from './modules/testing/testing.module';
     {
       provide: APP_FILTER,
       useClass: CustomDomainHttpExceptionsFilter,
-    }
+    },
   ],
 })
 export class AppModule {
-  static async forRoot(coreConfig: CoreConfig): Promise<DynamicModule>{
+  static async forRoot(coreConfig: CoreConfig): Promise<DynamicModule> {
     const modules: any[] = [
       TypeOrmModule.forRootAsync({
-        imports:[CoreModule],
+        imports: [CoreModule],
         useFactory: (coreConfig: CoreConfig) => {
           return {
             type: 'postgres',
@@ -39,16 +39,17 @@ export class AppModule {
             //     rejectUnauthorized: false
             //   }
             // }
-          }
+          };
         },
-        inject: [CoreConfig]
+        inject: [CoreConfig],
       }),
-       UsersModule,
-      TestingModule
-    ]
+      BlogersPlatformModule,
+      UsersModule,
+      TestingModule,
+    ];
     return {
       module: AppModule,
-      imports: modules, 
+      imports: modules,
     };
   }
 }
