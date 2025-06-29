@@ -15,7 +15,7 @@ export class BlogsRepository {
   async create(blog: BlogsSchema): Promise<number> {
     const query = `
         INSERT INTO "blogs"
-            ("name", "description", "websiteurl", "createdAt", "isMembership")
+            ("name", "description", "websiteUrl", "createdAt", "isMembership")
         VALUES
             ($1, $2, $3, $4::timestamp with time zone, $5)
         RETURNING "id"
@@ -66,7 +66,7 @@ export class BlogsRepository {
   async updateBlog(blogId: number, updateBlogDto: UpdateBlogDto) {
     const query = `
     UPDATE "blogs"
-    SET "name" = $1, "description" = $2, "websiteurl" = $3
+    SET "name" = $1, "description" = $2, "websiteUrl" = $3
     WHERE id = $4
   `;
 

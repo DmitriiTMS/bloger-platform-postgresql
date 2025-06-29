@@ -2,7 +2,7 @@ export type Blog = {
   id: number;
   name: string;
   description: string;
-  websiteurl: string;
+  websiteUrl: string;
   createdAt: string;
   isMembership: boolean;
 };

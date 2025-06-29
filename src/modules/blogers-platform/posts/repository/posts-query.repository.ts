@@ -19,10 +19,12 @@ export class PostsQueryRepository {
     const skip = query.calculateSkip();
 
     // Базовый запрос для постов блога
-    let postsQuery = `
-        SELECT * 
-        FROM "posts"
-        WHERE "blogId" = $1
+    let postsQuery =  `
+      SELECT p.id, p.title, p."shortDescription", p.content, p."createdAt", p."blogId", b.name as "blogName"
+      FROM "posts" as p
+      LEFT JOIN "blogs" as b
+      ON p."blogId" = b.id 
+      WHERE p."blogId" = $1
     `;
     const params: (string | number)[] = [blogId];
 
