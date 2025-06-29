@@ -23,7 +23,7 @@ export class PostsService {
       shortDescription: postData.postByBlogIdDto.shortDescription,
       content: postData.postByBlogIdDto.content,
       createdAt: new Date().toISOString(),
-      blogId: blog.id!,
+      blogId: blog.id,
     };
 
     const postId = await this.postsRepository.save(post);

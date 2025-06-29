@@ -63,7 +63,7 @@ export class BlogsQueryRepository {
       size: query.pageSize || Number(totalCount[0].count),
     });
   }
-  
+
   async getBlogByIdOrNotFoundFail(blogId: number): Promise<Blog> {
     const query = `SELECT id FROM "blogs" WHERE id = $1`;
     const blog = await this.dataSource.query(query, [blogId]);
@@ -80,6 +80,13 @@ export class BlogsQueryRepository {
   async getOne(blogId: number) {
     const query = `SELECT * FROM "blogs" WHERE "id" = $1`;
     const result = await this.dataSource.query(query, [blogId]);
+
+    if (!result || result.length === 0) {
+      throw new CustomDomainException({
+        errorsMessages: `Blog by ${blogId} not found`,
+        customCode: DomainExceptionCode.NotFound,
+      });
+    }
     const { id, ...responseBlog } = result[0];
     return {
       id: String(result[0].id),
