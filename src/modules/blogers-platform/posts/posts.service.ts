@@ -4,12 +4,20 @@ import { BlogsRepository } from '../blogs/repositories/blogs.repository';
 import { Post, UpdatePostByBlogId } from './types/posts-types';
 import { PostsRepository } from './repository/posts.repository';
 import { UpdatePostParamsDto } from '../blogs/dto/param/update-post-param.dto';
+import { PostDataCommentCreateDto } from './dto/post-data-comment-create.dto';
+import { CustomDomainException } from 'src/setup/exceptions/custom-domain.exception';
+import { DomainExceptionCode } from 'src/setup/exceptions/filters/constants';
+import { UsersRepository } from 'src/modules/users/users/users.repository';
+import { CommentsRepository } from '../comments/comments.repository';
+import { NewComment } from '../comments/types/types-comments';
 
 @Injectable()
 export class PostsService {
   constructor(
     private blogsRepository: BlogsRepository,
     private postsRepository: PostsRepository,
+    private usersRepository: UsersRepository,
+    private commentRepository: CommentsRepository
   ) {}
 
   async createPost(postData: {
@@ -44,5 +52,34 @@ export class PostsService {
     await this.blogsRepository.getBlogByIdOrNotFoundFail(dataForUpdatePost.blogId)
     await this.postsRepository.getPostByIdOrNotFoundFail(dataForUpdatePost.postId)
     await this.postsRepository.delete(dataForUpdatePost.postId)
+  }
+
+  async createCommentsByPostId(
+    dataForCreteCommentDto: PostDataCommentCreateDto,
+  ) {
+    const { content, postId, userId } = dataForCreteCommentDto;
+
+    await this.postsRepository.getPostByIdOrNotFoundFail(postId)
+ 
+    const user = await this.usersRepository.findById(userId);
+    if (!user[0]) {
+      throw new CustomDomainException({
+        errorsMessages: `User by ${userId} not found`,
+        customCode: DomainExceptionCode.NotFound,
+      });
+    }
+
+    const newComment:NewComment  = {
+      postId: postId,
+      content,
+      userId,
+      userLogin: user[0].login,
+      createdAt: new Date().toISOString(),
+      likesCount: 0,
+      dislikesCount: 0
+    }
+
+    const createdComment = await this.commentRepository.save(newComment);    
+    return createdComment;
   }
 }

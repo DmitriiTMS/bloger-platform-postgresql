@@ -78,7 +78,7 @@ const adapters = [
       useFactory: (configService: ConfigService): JwtService => {
         return new JwtService({
           secret: configService.get('ACCESS_TOKEN_SECRET'),
-          signOptions: { expiresIn: '10s' },
+          signOptions: { expiresIn: '10m' },
           verifyOptions: { ignoreExpiration: false },
         });
       },
@@ -89,12 +89,13 @@ const adapters = [
       useFactory: (configService: ConfigService): JwtService => {
         return new JwtService({
           secret: configService.get('REFRESH_TOKEN_SECRET'),
-          signOptions: { expiresIn: '20s' },
+          signOptions: { expiresIn: '20m' },
           verifyOptions: { ignoreExpiration: false },
         });
       },
       inject: [ConfigService],
     },
   ],
+  exports: [UsersRepository],
 })
 export class UsersModule {}
