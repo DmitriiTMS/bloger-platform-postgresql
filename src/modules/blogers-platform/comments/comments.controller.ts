@@ -44,11 +44,10 @@ export class CommentsController {
       await this.commentsQueryRepository.getCommentByIdOrNotFoundFail(param.id);
     let userStatus = LikeStatus.NONE;
 
-    // if (user?.userId) {
-    //   const reactionUser = await this.commentsQueryReactionsRepository.reactionForCommentIdAndUserId(id, user.userId);
-    //   userStatus = reactionUser?.status || LikeStatus.NONE;
-    // }
-    // return this.mapToViewComment(comment, userStatus);
+    if (user?.userId) {
+      const reactionUser = await this.commentsQueryRepository.reactionForCommentIdAndUserId(param.id, user.userId);
+      userStatus = reactionUser?.status || LikeStatus.NONE;
+    }
     return this.mapToViewComment(comment, userStatus);
   }
 
@@ -104,7 +103,7 @@ export class CommentsController {
       id: commentDB.id,
       content: commentDB.content,
       commentatorInfo: {
-        userId: commentDB.userId,
+        userId: String(commentDB.userId),
         userLogin: commentDB.userLogin,
       },
       createdAt: commentDB.createdAt,

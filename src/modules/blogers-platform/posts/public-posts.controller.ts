@@ -23,6 +23,7 @@ import { NewCommentDB } from '../comments/types/types-comments';
 import { LikeStatus } from '../types-reaction';
 import { PostReactionBodyDto } from './dto/reaction/post-reaction-body.dto';
 import { PostDataReactionDto } from './dto/reaction/post-reaction-data.dto';
+import { AuthorizationCheckGuard } from '../../../modules/users/auth/guards/authorization-check.guard';
 
 @Controller('posts')
 export class PublicPostsController {
@@ -32,16 +33,23 @@ export class PublicPostsController {
   ) {}
 
   @Get()
+  @UseGuards(AuthorizationCheckGuard)
   @HttpCode(HttpStatus.OK)
-  async getAllPosts(@Query() query: GetPostsQueryParams) {
-    return await this.postsQueryRepository.getAllPosts(query);
+  async getAllPosts( 
+    @Query() query: GetPostsQueryParams,
+    @ExtractUserIfExistsFromRequest() user: { userId: number }) {
+    return await this.postsQueryRepository.getAllPosts(query, user?.userId);
   }
 
   @Get(':id')
+  @UseGuards(AuthorizationCheckGuard)
   @HttpCode(HttpStatus.OK)
-  async getPostById(@Param() param: IdParamPostDto) {
+  async getPostById(
+    @Param() param: IdParamPostDto,
+     @ExtractUserIfExistsFromRequest() user: { userId: number }
+  ) {
     await this.postsQueryRepository.getPostByIdOrNotFoundFail(param.id);
-    return await this.postsQueryRepository.getPostWithBlogData(param.id);
+    return await this.postsQueryRepository.getOneWithReactions(param.id, user?.userId);
   }
 
   @Post(':postId/comments')
@@ -73,9 +81,27 @@ export class PublicPostsController {
       status: body.likeStatus,
       postId: param.postId,
       userId: user.userId,
+      created_at: new Date().toISOString()
     };
 
     await this.postsService.addReaction(postDataReactionDto);
+  }
+
+  
+  @Get(':postId/comments')
+  @UseGuards(AuthorizationCheckGuard)
+  @HttpCode(HttpStatus.OK)
+  async getAllCommentsByPostId(
+    @Param() param: PostIdParamDto,
+    @Query() query: GetPostsQueryParams,
+    @ExtractUserIfExistsFromRequest() user: { userId: number }
+  ) {
+
+    return await this.postsQueryRepository.getAllCommentsByPostId(
+      param.postId,
+      query,
+      user?.userId
+    );
   }
 
   mapCommentDBToCommentView(comment: NewCommentDB) {
@@ -83,7 +109,7 @@ export class PublicPostsController {
       id: comment.id,
       content: comment.content,
       commentatorInfo: {
-        userId: comment.userId,
+        userId: String(comment.userId),
         userLogin: comment.userLogin,
       },
       createdAt: comment.createdAt,

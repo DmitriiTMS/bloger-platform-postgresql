@@ -32,4 +32,11 @@ export class CommentsQueryRepository {
 
     return res;
   }
+
+  async reactionForCommentIdAndUserId(commentId: number, userId: number) {
+    const query = `SELECT * FROM "comment_likes" WHERE "comment_id" = $1 AND "user_id" = $2 LIMIT 1`;
+    const result = await this.dataSource.query(query, [commentId, userId]);
+
+    return result[0] || null;
+  }
 }
