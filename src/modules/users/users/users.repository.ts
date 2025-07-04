@@ -61,14 +61,14 @@ export class UsersRepository {
     );
   }
 
-  async findById(id: string) {
+  async findById(id: number) {
     return await this.dataSource.query(
       `SELECT * FROM "users" WHERE id = ($1)`,
       [id],
     );
   }
 
-  async delete(id: string) {
+  async delete(id: number) {
     const userById = await this.findById(id);
     if (userById.length == 0) {
       throw new NotFoundException(`User с ${id} не найден`);
