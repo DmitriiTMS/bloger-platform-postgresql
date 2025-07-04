@@ -51,7 +51,7 @@ export class BlogsController {
     @Query() query: GetPostsQueryParams,
   ) {
     await this.blogsQueryRepository.getBlogByIdOrNotFoundFail(param.blogId)
-    return await this.postsQueryRepository.getAllPostsByblogId(param.blogId, query)
+    return await this.postsQueryRepository.getAllPostsByblogIdPrivate(param.blogId, query)
   }
 
   @Post()
@@ -86,7 +86,7 @@ export class BlogsController {
       param.blogId,
       body,
     );
-    return await this.postsQueryRepository.getPostWithBlogData(postId);
+    return await this.postsQueryRepository.getOneWithReactions(postId);
   }
 
   @Put(':blogId/posts/:postId')

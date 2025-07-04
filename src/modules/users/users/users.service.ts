@@ -40,7 +40,7 @@ export class UsersService {
     return createdUser;
   }
 
- async remove(id: string) {
+ async remove(id: number) {
     return await this.usersRepository.delete(id);
   }
 }
