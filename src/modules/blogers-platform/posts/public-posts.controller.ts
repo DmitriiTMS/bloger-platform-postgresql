@@ -6,6 +6,7 @@ import {
   HttpStatus,
   Param,
   Post,
+  Put,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -20,6 +21,8 @@ import { PostDataCommentCreateDto } from './dto/post-data-comment-create.dto';
 import { PostsService } from './posts.service';
 import { NewCommentDB } from '../comments/types/types-comments';
 import { LikeStatus } from '../types-reaction';
+import { PostReactionBodyDto } from './dto/reaction/post-reaction-body.dto';
+import { PostDataReactionDto } from './dto/reaction/post-reaction-data.dto';
 
 @Controller('posts')
 export class PublicPostsController {
@@ -58,7 +61,22 @@ export class PublicPostsController {
     return this.mapCommentDBToCommentView(newComment);
   }
 
-  
+  @Put(':postId/like-status')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async addReactionPost(
+    @Body() body: PostReactionBodyDto,
+    @Param() param: PostIdParamDto,
+    @ExtractUserIfExistsFromRequest() user: { userId: number },
+  ) {
+    const postDataReactionDto: PostDataReactionDto = {
+      status: body.likeStatus,
+      postId: param.postId,
+      userId: user.userId,
+    };
+
+    await this.postsService.addReaction(postDataReactionDto);
+  }
 
   mapCommentDBToCommentView(comment: NewCommentDB) {
     return {
