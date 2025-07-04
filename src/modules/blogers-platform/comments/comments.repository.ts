@@ -88,4 +88,20 @@ export class CommentsRepository {
     const query = `DELETE FROM "comments" WHERE id = $1`;
     await this.dataSource.query(query, [commentId]);
   }
+
+  async likeCountUpdate(commentId: number, count: number) {
+    const query = `UPDATE "comments"
+        SET "likes_count" = $1
+        WHERE "id" = $2
+      `;     
+    await this.dataSource.query(query, [count, commentId]);
+  }
+
+  async dislikeCountUpdate(commentId: number, count: number) {
+    const query = `UPDATE "comments"
+        SET "dislikes_count" = $1
+        WHERE "id" = $2
+      `;
+    await this.dataSource.query(query, [count, commentId]);
+  }
 }

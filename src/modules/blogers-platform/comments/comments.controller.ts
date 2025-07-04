@@ -23,6 +23,8 @@ import { JwtAuthGuard } from '../../../modules/users/auth/guards/jwt-auth.guard'
 import { CommentIdParamDto } from './dto/comment-id-param';
 import { CommentsService } from './comments.service';
 import { CommentUpdateDto } from './dto/comment-update.dto';
+import { CommentReactionDto } from './dto/comment-reaction.dto';
+import { CommentDataReactionDto } from './dto/comment-data-reaction.dto';
 
 @Controller('comments')
 export class CommentsController {
@@ -79,6 +81,22 @@ export class CommentsController {
     };
 
     await this.commentsService.deleteOne(dataDeleteComment);
+  }
+
+  @Put(':commentId/like-status')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async addReactionByComment(
+    @Body() body: CommentReactionDto,
+    @Param() param: CommentIdParamDto,
+    @ExtractUserIfExistsFromRequest() user: { userId: number },
+  ) {
+    const data: CommentDataReactionDto = {
+      status: body.likeStatus,
+      commentId: param.commentId,
+      userId: user.userId,
+    };
+    await this.commentsService.addReaction(data)
   }
 
   mapToViewComment(commentDB: NewCommentDB, status: LikeStatus) {

@@ -12,10 +12,10 @@ import { UsersModule } from '../users/users.module';
 import { CommentsRepository } from './comments/comments.repository';
 import { CommentsQueryRepository } from './comments/comments-query.repository';
 import { CommentsController } from './comments/comments.controller';
-import { provideTokens } from '../users/auth/settings/provide-tokens';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { JwtModule, JwtService } from '@nestjs/jwt';
+import { JwtModule, } from '@nestjs/jwt';
 import { CommentsService } from './comments/comments.service';
+import { CommentsReactionsRepository } from './comments/comments-reactions.repository';
 
 @Module({
   imports: [
@@ -24,7 +24,7 @@ import { CommentsService } from './comments/comments.service';
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
         secret: configService.get('ACCESS_TOKEN_SECRET'),
-        signOptions: { expiresIn: '10m' },
+        signOptions: { expiresIn: configService.get('TIME_ACCESS_TOKEN') },
       }),
       inject: [ConfigService],
     }),
@@ -45,6 +45,7 @@ import { CommentsService } from './comments/comments.service';
     CommentsService,
     CommentsRepository,
     CommentsQueryRepository,
+    CommentsReactionsRepository
   ],
 })
 export class BlogersPlatformModule {}
