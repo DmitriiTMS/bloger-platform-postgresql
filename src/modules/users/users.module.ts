@@ -20,6 +20,10 @@ import { AuthQueryRepository } from './auth/auth-query.repository';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { DevicesController } from './devices/devices.controller';
 import { DevicesService } from './devices/devices.service';
+import { UsersTormRepository } from './typeOrmRepository/users-torm.repository';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { User } from './users/entitys/users.entity';
+import { EmailConfirmation } from './users/entitys/email-confirmations.entity';
 
 const adapters = [
   UsersService,
@@ -34,6 +38,8 @@ const adapters = [
   DevicesRepository,
   LocalStrategy,
   JwtStrategy,
+  // Type ORM
+  UsersTormRepository
 ];
 
 @Module({
@@ -69,6 +75,7 @@ const adapters = [
         },
       ],
     }),
+    TypeOrmModule.forFeature([User, EmailConfirmation])
   ],
   controllers: [UsersController, AuthController, DevicesController],
   providers: [

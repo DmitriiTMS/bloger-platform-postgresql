@@ -22,6 +22,7 @@ import { DomainExceptionCode } from '../../../setup/exceptions/filters/constants
 import { EmailConfirmationCodeSchema } from '../users/schemas/email-confirmations.schema';
 import { RegistrationEmailEesendingDto } from './dto/registration-email-resending.dto';
 import { NewPasswordDto } from './dto/new-password.dto';
+import { EmailConfirmation } from '../users/entitys/email-confirmations.entity';
 
 @Injectable()
 export class AuthService {
@@ -54,7 +55,11 @@ export class AuthService {
     });
 
     await this.refreshTokenRepository.addRefreshToken({ refreshToken });
-    await this.createDeviceUsers(refreshToken, infoDevice.ip!, infoDevice.title!);
+    await this.createDeviceUsers(
+      refreshToken,
+      infoDevice.ip!,
+      infoDevice.title!,
+    );
 
     return {
       accessToken,
@@ -100,7 +105,17 @@ export class AuthService {
   async registerUser(userCreateDto: CreateUserDto) {
     const code = randomUUID();
 
-    const emailConfirmation = EmailConfirmationCodeSchema.createInstance({
+    // const emailConfirmation = EmailConfirmationCodeSchema.createInstance({
+    //   confirmationCode: code,
+    //   expirationDate: add(new Date(), {
+    //     hours: 1,
+    //     minutes: 30,
+    //   }),
+    //   isConfirmed: false,
+    // });
+
+    // Type ORM
+    const emailConfirmation = EmailConfirmation.createInstance({
       confirmationCode: code,
       expirationDate: add(new Date(), {
         hours: 1,
@@ -110,7 +125,10 @@ export class AuthService {
     });
 
     await this.usersService.create(userCreateDto, emailConfirmation);
-    this.emailService.registerUserAndResendingEmail(userCreateDto.email, code);
+    this.emailService.registerUserAndSendingCodeEmail(
+      userCreateDto.email,
+      code,
+    );
   }
 
   async registrationEmailResending(
@@ -227,7 +245,8 @@ export class AuthService {
       throw new UnauthorizedException('Refresh token не передан в cookies');
     }
 
-    const verifyRefreshToken = await this.verifyAndDecodedRefreshToken(refreshToken);
+    const verifyRefreshToken =
+      await this.verifyAndDecodedRefreshToken(refreshToken);
 
     const newAccessToken = this.accessJwtService.sign({
       userId: verifyRefreshToken.userId,
@@ -240,7 +259,8 @@ export class AuthService {
       deviceId: verifyRefreshToken.deviceId,
     });
 
-    const token = await this.refreshTokenRepository.findByRefreshToken(refreshToken);
+    const token =
+      await this.refreshTokenRepository.findByRefreshToken(refreshToken);
     if (!token) {
       throw new UnauthorizedException('REFRESH_TOKEN_NOT_FOUND');
     }
@@ -257,7 +277,8 @@ export class AuthService {
       throw new UnauthorizedException('Не найден deviceId');
     }
 
-    const decodeNewRefreshToken = await this.refreshJwtService.decode(newRefreshToken);
+    const decodeNewRefreshToken =
+      await this.refreshJwtService.decode(newRefreshToken);
     await this.devicesRepository.updateSessionLastActiveDate(
       verifyRefreshToken.deviceId!,
       new Date(decodeNewRefreshToken.exp! * 1000).toISOString(), // новый срок истечения
@@ -269,20 +290,24 @@ export class AuthService {
     return { newAccessToken, newRefreshToken };
   }
 
-   async logout(refreshToken: string) {
+  async logout(refreshToken: string) {
     if (!refreshToken) {
       throw new UnauthorizedException('Refresh token не передан в cookies');
     }
 
-    const decodedRefreshToken = await this.verifyAndDecodedRefreshToken(refreshToken);
+    const decodedRefreshToken =
+      await this.verifyAndDecodedRefreshToken(refreshToken);
 
-    const token = await this.refreshTokenRepository.findByRefreshToken(refreshToken);
+    const token =
+      await this.refreshTokenRepository.findByRefreshToken(refreshToken);
     if (!token) {
       throw new UnauthorizedException('REFRESH_TOKEN_NOT_FOUND');
     }
 
     await this.refreshTokenRepository.deleteRefreshToken(token.id);
-    await this.devicesRepository.deleteSessionByDeviceId(decodedRefreshToken.deviceId)
+    await this.devicesRepository.deleteSessionByDeviceId(
+      decodedRefreshToken.deviceId,
+    );
   }
 
   async verifyAndDecodedRefreshToken(refreshToken: string) {

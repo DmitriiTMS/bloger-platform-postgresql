@@ -10,6 +10,15 @@ export class EmailService {
     private configService: ConfigService
 ) {}
 
+ registerUserAndSendingCodeEmail(email: string, code: string) {
+    this.mailerService.sendMail({
+      from: this.configService.get('EMAIL'),
+      to: email,
+      subject: 'Your code is here',
+      html: emailExamples.registrationEmail(code),
+    });
+  }
+
   registerUserAndResendingEmail(email: string, code: string) {
     this.mailerService.sendMail({
       from: this.configService.get('EMAIL'),

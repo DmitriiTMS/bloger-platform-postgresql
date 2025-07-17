@@ -4,11 +4,14 @@ import { UserSchema } from './schemas/users.schema';
 import { Bcrypt } from './utils/bcrypt';
 import { UsersRepository } from './users.repository';
 import { CustomDomainException } from '../../../setup/exceptions/custom-domain.exception';
+import { User } from './entitys/users.entity';
+import { UsersTormRepository } from '../typeOrmRepository/users-torm.repository';
 
 
 @Injectable()
 export class UsersService {
   constructor(
+    private usersTormRepository: UsersTormRepository,
     private usersRepository:UsersRepository
   ) {}
 
@@ -28,14 +31,23 @@ export class UsersService {
     }
 
     const passwordHash = await Bcrypt.generateHash(createUserDto.password);   
-    const user = UserSchema.createInstance(
+    // const user = UserSchema.createInstance(
+    //   {
+    //     email: createUserDto.email,
+    //     login: createUserDto.login,
+    //     password: passwordHash,
+    //   },
+    // );
+
+    // Type ORM
+      const user = User.createInstance(
       {
         email: createUserDto.email,
         login: createUserDto.login,
         password: passwordHash,
       },
     );
-    const createdUser = await this.usersRepository.create(user, emailConfirmation)   
+    const createdUser = await this.usersTormRepository.create(user, emailConfirmation)   
 
     return createdUser;
   }

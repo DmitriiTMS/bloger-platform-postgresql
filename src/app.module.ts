@@ -8,6 +8,8 @@ import { APP_FILTER } from '@nestjs/core';
 import { CustomDomainHttpExceptionsFilter } from './setup/exceptions/filters/custom-domain-exceptions.filter';
 import { TestingModule } from './modules/testing/testing.module';
 import { BlogersPlatformModule } from './modules/blogers-platform/blogers-platform.module';
+import { User } from './modules/users/users/entitys/users.entity';
+import { EmailConfirmation } from './modules/users/users/entitys/email-confirmations.entity';
 
 @Module({
   imports: [CoreModule, configModule],
@@ -31,8 +33,11 @@ export class AppModule {
             username: coreConfig.db_username,
             password: coreConfig.db_password,
             database: coreConfig.db_name,
-            autoLoadEntities: false,
-            synchronize: false,
+            entities: [User, EmailConfirmation],
+            autoLoadEntities: true,
+            synchronize: true,
+            logging: true,
+            logger: 'formatted-console'
             // ssl: true, ДЛЯ ПОДКЛЮЧЕНИЯ К Neon
             // extra: {
             //   ssl: {
