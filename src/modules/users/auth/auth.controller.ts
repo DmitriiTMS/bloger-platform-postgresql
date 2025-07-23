@@ -61,7 +61,7 @@ export class AuthController {
     return await this.authService.newPassword(body);
   }
 
-  
+  // продолжить
   @Post('registration-confirmation')
   @UseGuards(ThrottlerGuard)
   @HttpCode(HttpStatus.NO_CONTENT)

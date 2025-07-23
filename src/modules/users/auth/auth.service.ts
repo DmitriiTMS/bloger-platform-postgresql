@@ -23,6 +23,9 @@ import { EmailConfirmationCodeSchema } from '../users/schemas/email-confirmation
 import { RegistrationEmailEesendingDto } from './dto/registration-email-resending.dto';
 import { NewPasswordDto } from './dto/new-password.dto';
 import { EmailConfirmation } from '../users/entitys/email-confirmations.entity';
+import { RefreshTokenRepositoryTORM } from '../typeOrmRepository/refresh-token-torm.repository';
+import { DevicesRepositoryTORM } from '../typeOrmRepository/devices-torm.repository';
+import { UsersTormRepository } from '../typeOrmRepository/users-torm.repository';
 
 @Injectable()
 export class AuthService {
@@ -30,12 +33,15 @@ export class AuthService {
     private usersService: UsersService,
     private emailService: EmailService,
     private usersRepository: UsersRepository,
+    private usersRepositoryTORM: UsersTormRepository,
     @Inject(provideTokens.ACCESS_TOKEN_STRATEGY_INJECT_TOKEN)
     private accessJwtService: JwtService,
     @Inject(provideTokens.REFRESH_TOKEN_STRATEGY_INJECT_TOKEN)
     private refreshJwtService: JwtService,
     private refreshTokenRepository: RefreshTokenRepository,
+    private refreshTokenRepositoryTORM: RefreshTokenRepositoryTORM,
     private devicesRepository: DevicesRepository,
+    private devicesRepositoryTORM: DevicesRepositoryTORM,
   ) {}
 
   async loginUser(
@@ -54,7 +60,8 @@ export class AuthService {
       deviceId: deviceId,
     });
 
-    await this.refreshTokenRepository.addRefreshToken({ refreshToken });
+    // await this.refreshTokenRepository.addRefreshToken({ refreshToken });
+    await this.refreshTokenRepositoryTORM.addRefreshToken({ refreshToken });
     await this.createDeviceUsers(
       refreshToken,
       infoDevice.ip!,
@@ -173,8 +180,11 @@ export class AuthService {
   }
 
   async passwordRecovery(email: string) {
-    const user = await this.usersRepository.findByEmail(email);
-    if (user.length === 0) {
+    // const user = await this.usersRepository.findByEmail(email);
+    const userTORM = await this.usersRepositoryTORM.findByEmail(email);
+    console.log(userTORM);
+
+    if (!userTORM) {
       throw new CustomDomainException({
         errorsMessages: `User by ${email} not found`,
         customCode: DomainExceptionCode.NotFound,
@@ -182,25 +192,33 @@ export class AuthService {
     }
 
     const recoveryCode = randomUUID();
-    await this.usersRepository.updateUserСonfirmationCode(
-      user[0].id,
+    // await this.usersRepository.updateUserСonfirmationCode(
+    //   userTORM.id,
+    //   recoveryCode,
+    // );
+    await this.usersRepositoryTORM.updateUserСonfirmationCode(
+      userTORM.id,
       recoveryCode,
     );
     await this.emailService.passwordRecovery(email, recoveryCode);
   }
 
   async newPassword(newPasswordDto: NewPasswordDto) {
-    const user = await this.usersRepository.findBYCodeEmail(
+    // const user = await this.usersRepository.findBYCodeEmail(
+    //   newPasswordDto.recoveryCode,
+    // );
+
+    const userTORM = await this.usersRepositoryTORM.findBYCodeEmail(
       newPasswordDto.recoveryCode,
     );
-    if (!user) {
+    if (!userTORM) {
       throw new CustomDomainException({
         errorsMessages: `User by ${newPasswordDto.recoveryCode} not found`,
         customCode: DomainExceptionCode.NotFound,
       });
     }
 
-    if (user.expirationDate < new Date()) {
+    if (userTORM.expirationDate < new Date()) {
       throw new CustomDomainException({
         errorsMessages: [
           {
@@ -212,7 +230,8 @@ export class AuthService {
     }
 
     const passwordHash = await Bcrypt.generateHash(newPasswordDto.newPassword);
-    await this.usersRepository.updateUserPassword(user.userId, passwordHash);
+    // await this.usersRepository.updateUserPassword(userTORM.userId, passwordHash);
+    await this.usersRepositoryTORM.updateUserPassword(userTORM.userId, passwordHash);
   }
 
   async createDeviceUsers(refreshToken: string, ip: string, title: string) {
@@ -236,7 +255,8 @@ export class AuthService {
       createdAt: new Date().toISOString(),
     };
 
-    await this.devicesRepository.createSession(session);
+    // await this.devicesRepository.createSession(session);
+    await this.devicesRepositoryTORM.createSession(session);
     return true;
   }
 

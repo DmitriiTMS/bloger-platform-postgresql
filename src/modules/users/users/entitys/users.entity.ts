@@ -1,7 +1,8 @@
 import { BaseEntity } from '../../../../modules/entitys/base.entyty';
-import { Column, Entity, OneToOne } from 'typeorm';
+import { Column, Entity, OneToMany, OneToOne } from 'typeorm';
 import { EmailConfirmation } from './email-confirmations.entity';
 import { CreateUserDto } from '../dto/create-user.dto';
+import { Devices } from '../../devices/entities/devices.entity';
 
 @Entity({ name: 'users' })
 export class User extends BaseEntity {
@@ -16,6 +17,9 @@ export class User extends BaseEntity {
 
   @OneToOne(() => EmailConfirmation, (emailConf) => emailConf.user)
   emailConfirmation: EmailConfirmation;
+
+  @OneToMany(() => Devices, (devices) => devices.user)
+  devices: Devices;
 
   static createInstance(dto: CreateUserDto): User {
       const user = new this();

@@ -106,7 +106,7 @@ export class UsersRepository {
     );
   }
 
-  async updateUserСonfirmationCode(userId: string, code: string) {
+  async updateUserСonfirmationCode(userId: number, code: string) {
     return await this.dataSource.query(
       `UPDATE "email_confirmations"
      SET 
@@ -117,8 +117,7 @@ export class UsersRepository {
     );
   }
 
-  async updateUserPassword(userId: string, newPasswordHash: string) {
-    // 1. Выполняем обновление пароля
+  async updateUserPassword(userId: number, newPasswordHash: string) {
     return await this.dataSource.query(
       `UPDATE "users"
      SET "hashPassword" = $1

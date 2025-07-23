@@ -14,10 +14,7 @@ export class UsersTormRepository {
     private readonly emailConfirmationRepository: Repository<EmailConfirmation>,
   ) {}
 
-  async create(
-    user: User,
-    emailConfirmation?: EmailConfirmation,
-  ) {
+  async create(user: User, emailConfirmation?: EmailConfirmation) {
     // Сохраняем пользователя
     const createdUser = await this.usersRepository.save({
       login: user.login,
@@ -34,5 +31,34 @@ export class UsersTormRepository {
         isConfirmed: emailConfirmation.isConfirmed,
       });
     }
+  }
+
+  async findByEmail(email: string) {
+    return await this.usersRepository.findOne({ where: { email } });
+  }
+
+  async updateUserСonfirmationCode(userId: number, code: string) {
+    await this.emailConfirmationRepository.update(
+      { userId },
+      {
+        confirmationCode: code,
+        expirationDate: () => "NOW() + INTERVAL '1 hour 30 minutes'",
+      },
+    );
+  }
+
+  async findBYCodeEmail(code: string) {
+    const result = await this.emailConfirmationRepository.findOne({
+      where: { confirmationCode: code },
+    });
+
+    return result || null;
+  }
+
+  async updateUserPassword(userId: number, newPasswordHash: string) {
+    await this.usersRepository.update(
+      { id: userId },
+      { hashPassword: newPasswordHash },
+    );
   }
 }

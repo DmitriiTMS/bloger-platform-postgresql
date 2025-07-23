@@ -10,6 +10,8 @@ import { TestingModule } from './modules/testing/testing.module';
 import { BlogersPlatformModule } from './modules/blogers-platform/blogers-platform.module';
 import { User } from './modules/users/users/entitys/users.entity';
 import { EmailConfirmation } from './modules/users/users/entitys/email-confirmations.entity';
+import { RefreshTokens } from './modules/users/auth/entyties/refresh-token.entity';
+import { Devices } from './modules/users/devices/entities/devices.entity';
 
 @Module({
   imports: [CoreModule, configModule],
@@ -33,7 +35,7 @@ export class AppModule {
             username: coreConfig.db_username,
             password: coreConfig.db_password,
             database: coreConfig.db_name,
-            entities: [User, EmailConfirmation],
+            entities: [User, EmailConfirmation, RefreshTokens, Devices],
             autoLoadEntities: true,
             synchronize: true,
             logging: true,

@@ -24,6 +24,10 @@ import { UsersTormRepository } from './typeOrmRepository/users-torm.repository';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './users/entitys/users.entity';
 import { EmailConfirmation } from './users/entitys/email-confirmations.entity';
+import { RefreshTokens } from './auth/entyties/refresh-token.entity';
+import { RefreshTokenRepositoryTORM } from './typeOrmRepository/refresh-token-torm.repository';
+import { Devices } from './devices/entities/devices.entity';
+import { DevicesRepositoryTORM } from './typeOrmRepository/devices-torm.repository';
 
 const adapters = [
   UsersService,
@@ -39,7 +43,9 @@ const adapters = [
   LocalStrategy,
   JwtStrategy,
   // Type ORM
-  UsersTormRepository
+  UsersTormRepository,
+  RefreshTokenRepositoryTORM,
+  DevicesRepositoryTORM
 ];
 
 @Module({
@@ -75,7 +81,7 @@ const adapters = [
         },
       ],
     }),
-    TypeOrmModule.forFeature([User, EmailConfirmation])
+    TypeOrmModule.forFeature([User, EmailConfirmation, RefreshTokens, Devices])
   ],
   controllers: [UsersController, AuthController, DevicesController],
   providers: [
