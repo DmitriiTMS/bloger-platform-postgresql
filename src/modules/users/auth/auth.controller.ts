@@ -13,12 +13,14 @@ import { UserGetMeViewDto } from './dto/getMe-view.dto';
 import { AuthQueryRepository } from './auth-query.repository';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { ThrottlerGuard } from '@nestjs/throttler';
+import { AuthQueryRepositoryTORM } from '../typeOrmRepository/query-torm-repository/auth-query-torm.repository';
 
 @Controller('auth')
 export class AuthController {
   constructor(
     private authService: AuthService,
-    private authQueryRepository: AuthQueryRepository
+    private authQueryRepository: AuthQueryRepository,
+     private authQueryRepositoryTORM: AuthQueryRepositoryTORM
   ) {}
 
   
@@ -61,7 +63,6 @@ export class AuthController {
     return await this.authService.newPassword(body);
   }
 
-  // продолжить
   @Post('registration-confirmation')
   @UseGuards(ThrottlerGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
@@ -111,8 +112,8 @@ export class AuthController {
   @Get('me')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
-  async getMe(@RequestUserDecorator() user: { userId: string }): Promise<UserGetMeViewDto> {
-    return await this.authQueryRepository.getMe(user?.userId);
+  async getMe(@RequestUserDecorator() user: { userId: number }): Promise<UserGetMeViewDto> {
+    return await this.authQueryRepositoryTORM.getMe(user?.userId);
   }
 
 }

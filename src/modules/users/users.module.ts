@@ -28,6 +28,8 @@ import { RefreshTokens } from './auth/entyties/refresh-token.entity';
 import { RefreshTokenRepositoryTORM } from './typeOrmRepository/refresh-token-torm.repository';
 import { Devices } from './devices/entities/devices.entity';
 import { DevicesRepositoryTORM } from './typeOrmRepository/devices-torm.repository';
+import { AuthQueryRepositoryTORM } from './typeOrmRepository/query-torm-repository/auth-query-torm.repository';
+import { UsersQueryRepositoryTORM } from './typeOrmRepository/query-torm-repository/user-query-torm.repository';
 
 const adapters = [
   UsersService,
@@ -45,7 +47,9 @@ const adapters = [
   // Type ORM
   UsersTormRepository,
   RefreshTokenRepositoryTORM,
-  DevicesRepositoryTORM
+  DevicesRepositoryTORM,
+  AuthQueryRepositoryTORM,
+  UsersQueryRepositoryTORM
 ];
 
 @Module({

@@ -32,8 +32,36 @@ export class DevicesRepositoryTORM {
     });
 
     console.log('sessionItem === ', sessionItem);
-    
 
-    return sessionItem
+    return sessionItem;
+  }
+
+  async findByDevice(deviceId: string) {
+    const result = await this.devicesRepository.findOne({
+      where: { deviceId },
+    });
+
+    return result || null;
+  }
+
+  async updateSessionLastActiveDate(
+    deviceId: string,
+    dateExpired: string,
+    lastActiveDate: string,
+    oldRefreshToken: string,
+    newRefreshToken: string,
+  ) {
+    await this.devicesRepository.update(
+      { deviceId, refreshToken: oldRefreshToken },
+      {
+        expirationDateRefreshToken: dateExpired,
+        lastActiveDate,
+        refreshToken: newRefreshToken,
+      },
+    );
+  }
+
+  async deleteSessionByDeviceId(deviceId: string) {
+    await this.devicesRepository.softDelete({ deviceId });
   }
 }

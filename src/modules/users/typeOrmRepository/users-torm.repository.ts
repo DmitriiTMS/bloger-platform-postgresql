@@ -61,4 +61,18 @@ export class UsersTormRepository {
       { hashPassword: newPasswordHash },
     );
   }
+
+  async updateUserIsConfirmed(userId: number) {
+    await this.emailConfirmationRepository.update(
+      { userId },
+      { isConfirmed: true },
+    );
+  }
+
+  async findBYUserIdCodeEmail(userId: number) {
+    const result = await this.emailConfirmationRepository.findOne({
+      where: { userId },
+    });
+    return result || null;
+  }
 }

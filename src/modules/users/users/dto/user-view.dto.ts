@@ -1,3 +1,4 @@
+import { User } from '../entitys/users.entity';
 import { UserSchema } from '../schemas/users.schema';
 
 export class UserViewDto {
@@ -6,7 +7,7 @@ export class UserViewDto {
   email: string;
   createdAt: string;
 
-  static mapToView(user: UserSchema) {
+  static mapToView(user: any) {
     const dto = new UserViewDto();
 
     dto.id = user.id;

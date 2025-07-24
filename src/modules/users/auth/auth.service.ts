@@ -75,16 +75,19 @@ export class AuthService {
   }
 
   async registrationConfirmation(regConfirmDto: RegistrationConfirmationDto) {
-    const user = await this.usersRepository.findBYCodeEmail(regConfirmDto.code);
+    // const user = await this.usersRepository.findBYCodeEmail(regConfirmDto.code);
+    const userTORM = await this.usersRepositoryTORM.findBYCodeEmail(
+      regConfirmDto.code,
+    );
 
-    if (!user) {
+    if (!userTORM) {
       throw new CustomDomainException({
         errorsMessages: `User by ${regConfirmDto.code} not found`,
         customCode: DomainExceptionCode.NotFound,
       });
     }
 
-    if (user.isConfirmed) {
+    if (userTORM.isConfirmed) {
       throw new CustomDomainException({
         errorsMessages: [
           {
@@ -95,7 +98,7 @@ export class AuthService {
       });
     }
 
-    if (user.expirationDate < new Date()) {
+    if (userTORM.expirationDate < new Date()) {
       throw new CustomDomainException({
         errorsMessages: [
           {
@@ -106,7 +109,8 @@ export class AuthService {
       });
     }
 
-    await this.usersRepository.updateUserIsConfirmed(user.userId);
+    // await this.usersRepository.updateUserIsConfirmed(userTORM.userId);
+    await this.usersRepositoryTORM.updateUserIsConfirmed(userTORM.userId);
   }
 
   async registerUser(userCreateDto: CreateUserDto) {
@@ -141,8 +145,11 @@ export class AuthService {
   async registrationEmailResending(
     regEmailResDto: RegistrationEmailEesendingDto,
   ) {
-    const user = await this.usersRepository.findByEmail(regEmailResDto.email);
-    if (user.length === 0) {
+    // const user = await this.usersRepository.findByEmail(regEmailResDto.email);
+    const userTORM = await this.usersRepositoryTORM.findByEmail(
+      regEmailResDto.email,
+    );
+    if (!userTORM) {
       throw new CustomDomainException({
         errorsMessages: [
           {
@@ -153,11 +160,17 @@ export class AuthService {
       });
     }
 
-    const isConfirmCode = await this.usersRepository.findBYUserIdCodeEmail(
-      user[0].id,
+    // const isConfirmCode = await this.usersRepository.findBYUserIdCodeEmail(
+    //   userTORM.id,
+    // );
+
+    const isConfirmCode = await this.usersRepositoryTORM.findBYUserIdCodeEmail(
+      userTORM.id,
     );
 
-    if (isConfirmCode.isConfirmed) {
+    console.log(isConfirmCode);
+
+    if (isConfirmCode && isConfirmCode.isConfirmed) {
       throw new CustomDomainException({
         errorsMessages: [
           {
@@ -169,8 +182,12 @@ export class AuthService {
     }
 
     const newConfirmationCode = randomUUID();
-    await this.usersRepository.updateUserСonfirmationCode(
-      user[0].id,
+    // await this.usersRepository.updateUserСonfirmationCode(
+    //   userTORM.id,
+    //   newConfirmationCode,
+    // );
+    await this.usersRepositoryTORM.updateUserСonfirmationCode(
+      userTORM.id,
       newConfirmationCode,
     );
     this.emailService.registerUserAndResendingEmail(
@@ -231,7 +248,10 @@ export class AuthService {
 
     const passwordHash = await Bcrypt.generateHash(newPasswordDto.newPassword);
     // await this.usersRepository.updateUserPassword(userTORM.userId, passwordHash);
-    await this.usersRepositoryTORM.updateUserPassword(userTORM.userId, passwordHash);
+    await this.usersRepositoryTORM.updateUserPassword(
+      userTORM.userId,
+      passwordHash,
+    );
   }
 
   async createDeviceUsers(refreshToken: string, ip: string, title: string) {
@@ -280,26 +300,41 @@ export class AuthService {
     });
 
     const token =
-      await this.refreshTokenRepository.findByRefreshToken(refreshToken);
+      await this.refreshTokenRepositoryTORM.findByRefreshToken(refreshToken);
     if (!token) {
       throw new UnauthorizedException('REFRESH_TOKEN_NOT_FOUND');
     }
 
-    await this.refreshTokenRepository.deleteRefreshToken(token.id);
-    await this.refreshTokenRepository.addRefreshToken({
+    // await this.refreshTokenRepository.deleteRefreshToken(token.id);
+    //  await this.refreshTokenRepository.addRefreshToken({
+    //   refreshToken: newRefreshToken,
+    // });
+    await this.refreshTokenRepositoryTORM.deleteRefreshToken(token.id);
+    await this.refreshTokenRepositoryTORM.addRefreshToken({
       refreshToken: newRefreshToken,
     });
 
-    const deviceIdByRefreshTokenDb = await this.devicesRepository.findByDevice(
-      verifyRefreshToken.deviceId,
-    );
+    // const deviceIdByRefreshTokenDb = await this.devicesRepository.findByDevice(
+    //   verifyRefreshToken.deviceId,
+    // );
+    const deviceIdByRefreshTokenDb =
+      await this.devicesRepositoryTORM.findByDevice(
+        verifyRefreshToken.deviceId,
+      );
     if (!deviceIdByRefreshTokenDb) {
       throw new UnauthorizedException('Не найден deviceId');
     }
 
     const decodeNewRefreshToken =
       await this.refreshJwtService.decode(newRefreshToken);
-    await this.devicesRepository.updateSessionLastActiveDate(
+    // await this.devicesRepository.updateSessionLastActiveDate(
+    //   verifyRefreshToken.deviceId!,
+    //   new Date(decodeNewRefreshToken.exp! * 1000).toISOString(), // новый срок истечения
+    //   new Date(decodeNewRefreshToken.iat! * 1000).toISOString(), // новое lastActiveDate
+    //   refreshToken,
+    //   newRefreshToken,
+    // );
+    await this.devicesRepositoryTORM.updateSessionLastActiveDate(
       verifyRefreshToken.deviceId!,
       new Date(decodeNewRefreshToken.exp! * 1000).toISOString(), // новый срок истечения
       new Date(decodeNewRefreshToken.iat! * 1000).toISOString(), // новое lastActiveDate
@@ -319,13 +354,13 @@ export class AuthService {
       await this.verifyAndDecodedRefreshToken(refreshToken);
 
     const token =
-      await this.refreshTokenRepository.findByRefreshToken(refreshToken);
+      await this.refreshTokenRepositoryTORM.findByRefreshToken(refreshToken);
     if (!token) {
       throw new UnauthorizedException('REFRESH_TOKEN_NOT_FOUND');
     }
 
-    await this.refreshTokenRepository.deleteRefreshToken(token.id);
-    await this.devicesRepository.deleteSessionByDeviceId(
+    await this.refreshTokenRepositoryTORM.deleteRefreshToken(token.id);
+    await this.devicesRepositoryTORM.deleteSessionByDeviceId(
       decodedRefreshToken.deviceId,
     );
   }
