@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
 import { User } from '../users/entitys/users.entity';
 import { Repository } from 'typeorm';
@@ -31,6 +31,15 @@ export class UsersTormRepository {
         isConfirmed: emailConfirmation.isConfirmed,
       });
     }
+
+    const { id, login, email, createdAt } = createdUser;
+
+    return {
+      id: String(id),
+      login,
+      email,
+      createdAt,
+    };
   }
 
   async findByEmail(email: string) {
@@ -50,10 +59,11 @@ export class UsersTormRepository {
   async findBYCodeEmail(code: string) {
     const result = await this.emailConfirmationRepository.findOne({
       where: { confirmationCode: code },
+      relations: ['user']
     });
 
     return result || null;
-  }
+     }
 
   async updateUserPassword(userId: number, newPasswordHash: string) {
     await this.usersRepository.update(
@@ -73,6 +83,18 @@ export class UsersTormRepository {
     const result = await this.emailConfirmationRepository.findOne({
       where: { userId },
     });
-    return result || null;
+    return result;
+  }
+
+  async findById(id: number) {
+    return await this.usersRepository.findOne({ where: { id } });
+  }
+
+  async delete(id: number) {
+    const userById = await this.findById(id);
+    if (!userById) {
+      throw new NotFoundException(`User с ${id} не найден`);
+    }
+    return await this.usersRepository.delete({ id });
   }
 }

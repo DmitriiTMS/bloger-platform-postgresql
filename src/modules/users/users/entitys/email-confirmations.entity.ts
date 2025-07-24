@@ -14,7 +14,7 @@ export class EmailConfirmation extends BaseEntity {
   @Column()
   isConfirmed: boolean;
 
-  @OneToOne(() => User, (user) => user.emailConfirmation)
+  @OneToOne(() => User, (user) => user.emailConfirmation, {onDelete: 'CASCADE'})
   @JoinColumn()
   public user: User;
 

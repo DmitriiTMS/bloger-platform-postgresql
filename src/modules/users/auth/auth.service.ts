@@ -76,11 +76,13 @@ export class AuthService {
 
   async registrationConfirmation(regConfirmDto: RegistrationConfirmationDto) {
     // const user = await this.usersRepository.findBYCodeEmail(regConfirmDto.code);
+    // console.log(user);
+    
     const userTORM = await this.usersRepositoryTORM.findBYCodeEmail(
       regConfirmDto.code,
     );
 
-    if (!userTORM) {
+    if (!userTORM || !userTORM.user) {
       throw new CustomDomainException({
         errorsMessages: `User by ${regConfirmDto.code} not found`,
         customCode: DomainExceptionCode.NotFound,
@@ -110,7 +112,7 @@ export class AuthService {
     }
 
     // await this.usersRepository.updateUserIsConfirmed(userTORM.userId);
-    await this.usersRepositoryTORM.updateUserIsConfirmed(userTORM.userId);
+    await this.usersRepositoryTORM.updateUserIsConfirmed(userTORM.user.id);
   }
 
   async registerUser(userCreateDto: CreateUserDto) {
@@ -167,8 +169,6 @@ export class AuthService {
     const isConfirmCode = await this.usersRepositoryTORM.findBYUserIdCodeEmail(
       userTORM.id,
     );
-
-    console.log(isConfirmCode);
 
     if (isConfirmCode && isConfirmCode.isConfirmed) {
       throw new CustomDomainException({

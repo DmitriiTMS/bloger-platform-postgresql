@@ -53,6 +53,6 @@ export class UsersService {
   }
 
  async remove(id: number) {
-    return await this.usersRepository.delete(id);
+    return await this.usersTormRepository.delete(id);
   }
 }

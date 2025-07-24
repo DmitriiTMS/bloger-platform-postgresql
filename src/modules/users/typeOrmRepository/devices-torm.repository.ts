@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Devices } from '../devices/entities/devices.entity';
-import { Repository } from 'typeorm';
+import { Not, Repository } from 'typeorm';
 
 type SessionDevice = {
   ip: string;
@@ -39,6 +39,7 @@ export class DevicesRepositoryTORM {
   async findByDevice(deviceId: string) {
     const result = await this.devicesRepository.findOne({
       where: { deviceId },
+      relations: ['user']
     });
 
     return result || null;
@@ -62,6 +63,29 @@ export class DevicesRepositoryTORM {
   }
 
   async deleteSessionByDeviceId(deviceId: string) {
-    await this.devicesRepository.softDelete({ deviceId });
+    await this.devicesRepository.delete({ deviceId });
   }
+
+  async getAllSessions(userId: number) {
+    return await this.devicesRepository.find({
+      where: { userId },
+      select: {
+        ip: true,
+        title: true,
+        lastActiveDate: true,
+        deviceId: true,
+      },
+    });
+  }
+
+  async deleteSessionsExceptCurrent(
+    userId: number,
+    currentRefreshToken: string,
+  ) {
+    await this.devicesRepository.delete({
+      userId,
+      refreshToken: Not(currentRefreshToken), // Удаляем все, кроме текущего токена
+    });
+  }
+
 }

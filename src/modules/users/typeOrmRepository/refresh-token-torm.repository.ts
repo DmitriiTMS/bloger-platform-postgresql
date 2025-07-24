@@ -24,6 +24,6 @@ export class RefreshTokenRepositoryTORM {
   }
 
   async deleteRefreshToken(id: number) {
-    await this.refreshTokensRepository.softDelete({ id });
+    await this.refreshTokensRepository.delete({ id });
   }
 }

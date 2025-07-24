@@ -24,7 +24,7 @@ export class Devices extends BaseEntity {
   @Column({ type: 'varchar' })
   refreshToken: string;
 
-  @ManyToOne(() => User, (user) => user.devices)
+  @ManyToOne(() => User, (user) => user.devices, { onDelete: 'CASCADE' })
   @JoinColumn()
   public user: User;
 

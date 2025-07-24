@@ -25,7 +25,8 @@ export class AuthController {
 
   
   @Post('login')
-  @UseGuards(ThrottlerGuard, LocalAuthGuard)
+  // @UseGuards(ThrottlerGuard, LocalAuthGuard)
+  @UseGuards(LocalAuthGuard)
   @HttpCode(HttpStatus.OK)
   async login(
     @ExtractUserFromRequest() user: {id: string, login: string},
@@ -50,35 +51,35 @@ export class AuthController {
   }
 
   @Post('password-recovery')
-  @UseGuards(ThrottlerGuard)
+  // @UseGuards(ThrottlerGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   async passwordRecovery(@Body() body: PasswordRecoveryDto) {
     return await this.authService.passwordRecovery(body.email);
   }
 
   @Post('new-password')
-  @UseGuards(ThrottlerGuard)
+  // @UseGuards(ThrottlerGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   async newPassword(@Body() body: NewPasswordDto) {
     return await this.authService.newPassword(body);
   }
 
   @Post('registration-confirmation')
-  @UseGuards(ThrottlerGuard)
+  // @UseGuards(ThrottlerGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   async registrationConfirmation(@Body() body: RegistrationConfirmationDto) {
     return await this.authService.registrationConfirmation(body)
   }
 
   @Post('registration')
-  @UseGuards(ThrottlerGuard)
+  // @UseGuards(ThrottlerGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   async register(@Body() body: CreateUserDto) {
     return await this.authService.registerUser(body);
   }
 
   @Post('registration-email-resending')
-  @UseGuards(ThrottlerGuard)
+  // @UseGuards(ThrottlerGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   async registrationEmailResending(@Body() body: RegistrationEmailEesendingDto) {
     return await this.authService.registrationEmailResending(body)
@@ -86,7 +87,7 @@ export class AuthController {
 
   
   @Post('refresh-token')
-  @UseGuards(ThrottlerGuard)
+  // @UseGuards(ThrottlerGuard)
   @HttpCode(HttpStatus.OK)
   async refreshToken(
     @Req() req: RequestExpress,
