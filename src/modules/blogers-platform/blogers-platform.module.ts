@@ -16,6 +16,13 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule, } from '@nestjs/jwt';
 import { CommentsService } from './comments/comments.service';
 import { CommentsReactionsRepository } from './comments/comments-reactions.repository';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { Blog } from './blogs/entitys/blog.entity';
+import { BlogsTORMRepository } from './blogs/repositories/blogsTORM.repository';
+import { BlogsQueryTORMRepository } from './blogs/repositories/blogs-query-TORM.repository';
+import { Post } from './posts/entity/post.entity';
+import { PostsTORMRepository } from './posts/repository/posts-TORM.repository';
+import { PostsReactions } from './posts/entity/posts_reactions.entity';
 
 @Module({
   imports: [
@@ -28,7 +35,9 @@ import { CommentsReactionsRepository } from './comments/comments-reactions.repos
       }),
       inject: [ConfigService],
     }),
+    TypeOrmModule.forFeature([Blog, Post, PostsReactions]),
   ],
+   
   controllers: [
     BlogsController,
     PublicBlogsController,
@@ -45,7 +54,11 @@ import { CommentsReactionsRepository } from './comments/comments-reactions.repos
     CommentsService,
     CommentsRepository,
     CommentsQueryRepository,
-    CommentsReactionsRepository
+    CommentsReactionsRepository,
+    // TORM
+    BlogsTORMRepository,
+    BlogsQueryTORMRepository,
+    PostsTORMRepository
   ],
 })
 export class BlogersPlatformModule {}

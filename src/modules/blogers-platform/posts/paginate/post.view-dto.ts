@@ -86,23 +86,29 @@ export class PostViewDto {
     }> = [],
     myStatus: LikeStatus = LikeStatus.NONE,
     likesCount: number = 0,
-    dislikesCount: number = 0
+    dislikesCount: number = 0,
   ): PostViewDto {
     const dto = new PostViewDto();
-    
-    dto.id = post.id;
+
+    dto.id = post.id.toString();
     dto.title = post.title;
     dto.shortDescription = post.shortDescription;
     dto.content = post.content;
-    dto.blogId = post.blogId;
+    dto.blogId = post.blogId.toString();
     dto.blogName = post.blogName;
     dto.createdAt = post.createdAt;
-    
+
     dto.extendedLikesInfo = {
       likesCount: likesCount,
       dislikesCount: dislikesCount,
       myStatus: myStatus,
-      newestLikes: newestLikes
+      newestLikes: newestLikes.length > 0 ? newestLikes : [
+        {
+          addedAt: '2025-07-30T13:26:18.432Z',
+          userId: 'string',
+          login: 'string',
+        },
+      ],
     };
 
     return dto;

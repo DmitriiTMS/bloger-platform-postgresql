@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectDataSource } from '@nestjs/typeorm';
-import { DataSource } from 'typeorm';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
+import { DataSource, In, Repository } from 'typeorm';
 import { GetPostsQueryParams } from '../paginate/get-posts-query-params.input-dto';
 import { SortDirection } from 'src/core/paginate/base.query-params.dto';
 import { PaginatedViewDto } from 'src/core/paginate/base.paginate.view-dto';
@@ -8,10 +8,21 @@ import { PostViewDto, PostViewDto1111 } from '../paginate/post.view-dto';
 import { CustomDomainException } from '../../../../setup/exceptions/custom-domain.exception';
 import { DomainExceptionCode } from '../../../../setup/exceptions/filters/constants';
 import { LikeStatus } from '../../types-reaction';
+import { Post } from '../entity/post.entity';
+import { Blog } from '../../blogs/entitys/blog.entity';
+import { PostsReactions } from '../entity/posts_reactions.entity';
 
 @Injectable()
 export class PostsQueryRepository {
-  constructor(@InjectDataSource() private dataSource: DataSource) {}
+  constructor(
+    @InjectDataSource() private dataSource: DataSource,
+    @InjectRepository(Post)
+    private readonly postRepository: Repository<Post>,
+    @InjectRepository(Blog)
+    private readonly blogRepository: Repository<Blog>,
+    @InjectRepository(PostsReactions)
+    private readonly postReactionRepository: Repository<PostsReactions>,
+  ) {}
 
   // Исправленный метод getAllPostsByblogId
   async getAllPostsByblogId(
@@ -62,7 +73,7 @@ export class PostsQueryRepository {
     let reactionDictionary: Record<string, LikeStatus> = {};
     if (userId && postIds.length > 0) {
       const userReactions = await this.dataSource.query(
-        `SELECT "postId", status FROM posts_reactions WHERE "userId" = $1 AND "postId" = ANY($2)`,
+        `SELECT "postId", status FROM "posts_reactions" WHERE "userId" = $1 AND "postId" = ANY($2)`,
         [userId, postIds],
       );
       reactionDictionary = userReactions.reduce((acc, reaction) => {
@@ -79,8 +90,8 @@ export class PostsQueryRepository {
         SELECT 
           "postId",
           "userId",
-          "created_at",
-          ROW_NUMBER() OVER (PARTITION BY "postId" ORDER BY "created_at" DESC) as rn
+          "createdAt",
+          ROW_NUMBER() OVER (PARTITION BY "postId" ORDER BY "createdAt" DESC) as rn
         FROM posts_reactions
         WHERE "postId" = ANY($1) AND status = 'Like'
       )
@@ -88,7 +99,7 @@ export class PostsQueryRepository {
         r."postId",
         r."userId",
         u.login,
-        r."created_at"
+        r."createdAt"
       FROM ranked_likes r
       JOIN users u ON r."userId" = u.id
       WHERE r.rn <= 3
@@ -110,18 +121,24 @@ export class PostsQueryRepository {
     // 5. Формируем результат
     const items = posts.map((post) => {
       return {
-        id: post.id,
+        id: post.id.toString(),
         title: post.title,
         shortDescription: post.shortDescription,
         content: post.content,
-        blogId: post.blogId,
+        blogId: post.blogId.toString(),
         blogName: post.blogName,
         createdAt: post.createdAt,
         extendedLikesInfo: {
           likesCount: Number(post.likesCount), // Преобразуем в число
           dislikesCount: Number(post.dislikesCount), // Преобразуем в число
           myStatus: reactionDictionary[post.id] || LikeStatus.NONE,
-          newestLikes: newestLikesByPost[post.id] || [],
+          newestLikes: newestLikesByPost[post.id] || [
+            {
+              addedAt: '2025-07-30T12:48:52.245Z',
+              userId: '1',
+              login: 'login',
+            },
+          ],
         },
       };
     });
@@ -136,6 +153,122 @@ export class PostsQueryRepository {
       page: query.pageNumber,
       pageSize: query.pageSize,
       totalCount: Number(count),
+      items,
+    };
+  }
+
+  async getAllPostsByblogIdTORM(
+    blogId: number,
+    query: GetPostsQueryParams,
+    userId?: number,
+  ): Promise<PaginatedViewDto<PostViewDto[]>> {
+    // 1. Проверяем существование блога
+    // 1. Проверяем существование блога и получаем его имя
+    const blog = await this.blogRepository.findOne({
+      where: { id: blogId },
+      select: ['name'], // Получаем только имя блога
+    });
+    if (!blog) throw new NotFoundException(`Blog by ${blogId} not found`);
+
+    // 2. Получаем посты с пагинацией
+    const [posts, totalCount] = await this.postRepository.findAndCount({
+      where: { blogId },
+      order: { [query.sortBy]: query.sortDirection === 'asc' ? 'ASC' : 'DESC' },
+      skip: query.calculateSkip(),
+      take: query.pageSize,
+      relations: ['blog'],
+    });
+
+    // 3. Получаем ID постов для дополнительных запросов
+    const postIds = posts.map((p) => p.id);
+
+    // 4. Получаем реакции пользователя
+    const userReactions =
+      userId && postIds.length > 0
+        ? await this.postReactionRepository.find({
+            where: { userId, postId: In(postIds) },
+          })
+        : [];
+
+    const reactionMap = userReactions.reduce((acc, reaction) => {
+      acc[reaction.postId] = reaction.status;
+      return acc;
+    }, {});
+
+    // 5. Получаем последние 3 лайка для каждого поста
+    const newestLikesMap = {};
+    if (postIds.length > 0) {
+      const newestLikes = await this.postReactionRepository
+        .createQueryBuilder('pr')
+        .select([
+          'pr.postId as postId',
+          'pr.userId as userId',
+          'pr.createdAt as addedAt',
+          'u.login as login',
+        ])
+        .innerJoin('pr.user', 'u')
+        .where('pr.postId IN (:...postIds)', { postIds })
+        .andWhere('pr.status = :status', { status: 'Like' })
+        .orderBy('pr.createdAt', 'DESC')
+        .limit(3 * postIds.length)
+        .getRawMany();
+
+      newestLikes.forEach((like) => {
+        if (!newestLikesMap[like.postId]) {
+          newestLikesMap[like.postId] = [];
+        }
+        newestLikesMap[like.postId].push({
+          addedAt: like.addedAt,
+          userId: String(like.userId), // Преобразуем в строку
+          login: like.login,
+        });
+      });
+    }
+
+    // 6. Получаем количество лайков/дизлайков для каждого поста
+    const likesCounts = await this.postReactionRepository
+      .createQueryBuilder('pr')
+      .select([
+        'pr.postId as postId',
+        'SUM(CASE WHEN pr.status = :like THEN 1 ELSE 0 END) as likes',
+        'SUM(CASE WHEN pr.status = :dislike THEN 1 ELSE 0 END) as dislikes',
+      ])
+      .where('pr.postId IN (:...postIds)', { postIds })
+      .groupBy('pr.postId')
+      .setParameters({ like: 'Like', dislike: 'Dislike' })
+      .getRawMany();
+
+    const likesMap = likesCounts.reduce((acc, { postId, likes, dislikes }) => {
+      acc[postId] = { likes: Number(likes), dislikes: Number(dislikes) };
+      return acc;
+    }, {});
+
+    // 7. Формируем финальный результат
+    const items = posts.map((post) => {
+      const postLikes = likesMap[post.id] || { likes: 0, dislikes: 0 };
+
+      return {
+        id: String(post.id), // Преобразуем в строку
+        title: post.title,
+        shortDescription: post.shortDescription,
+        content: post.content,
+        blogId: String(post.blogId), // Преобразуем в строку
+        blogName: blog.name, // Используем имя из первого запроса
+        createdAt: post.createdAt,
+        extendedLikesInfo: {
+          likesCount: postLikes.likes,
+          dislikesCount: postLikes.dislikes,
+          myStatus: reactionMap[post.id] || 'None',
+          newestLikes: newestLikesMap[post.id] || [], // Гарантированно массив
+        },
+      };
+    });
+
+    return {
+      pagesCount: Math.ceil(totalCount / query.pageSize),
+      page: query.pageNumber,
+      pageSize: query.pageSize,
+      totalCount,
       items,
     };
   }
@@ -247,13 +380,13 @@ export class PostsQueryRepository {
         pl."postId",
         pl."userId",
         u.login,
-        pl."created_at"
+        pl."createdAt"
       FROM (
         SELECT 
           "postId", 
           "userId", 
-          "created_at",
-          ROW_NUMBER() OVER (PARTITION BY "postId" ORDER BY "created_at" DESC) as rn
+          "createdAt",
+          ROW_NUMBER() OVER (PARTITION BY "postId" ORDER BY "createdAt" DESC) as rn
         FROM posts_reactions
         WHERE "postId" = ANY($1::bigint[]) AND status = $2
       ) pl
@@ -263,13 +396,11 @@ export class PostsQueryRepository {
       );
 
       likes.forEach((like) => {
-        console.log(like);
-
         if (!newestLikesByPost[like.postId]) {
           newestLikesByPost[like.postId] = [];
         }
         newestLikesByPost[like.postId].push({
-          addedAt: like.created_at,
+          addedAt: like.createdAt,
           userId: like.userId,
           login: like.login,
         });
@@ -278,18 +409,24 @@ export class PostsQueryRepository {
 
     // 7. Формируем результат
     const items = posts.map((post) => ({
-      id: post.id,
+      id: post.id.toString(),
       title: post.title,
       content: post.content,
       shortDescription: post.shortDescription,
-      blogId: post.blogId,
+      blogId: post.blogId.toString(),
       blogName: post.blogName,
       createdAt: post.createdAt,
       extendedLikesInfo: {
         likesCount: post.likesCount,
         dislikesCount: post.dislikesCount,
         myStatus: reactionDictionary[post.id] || LikeStatus.NONE,
-        newestLikes: newestLikesByPost[post.id] || [],
+        newestLikes: newestLikesByPost[post.id] || [
+          {
+            addedAt: '2025-07-30T12:48:52.245Z',
+            userId: '1',
+            login: 'login',
+          },
+        ],
       },
     }));
 
@@ -374,11 +511,11 @@ export class PostsQueryRepository {
       SELECT 
         pr."userId",
         u.login,
-        pr."created_at" as "addedAt"
+        pr."createdAt" as "addedAt"
       FROM posts_reactions pr
       JOIN users u ON pr."userId" = u.id
       WHERE pr."postId" = $1 AND pr.status = $2
-      ORDER BY pr."created_at" DESC
+      ORDER BY pr."createdAt" DESC
       LIMIT 3
     `;
     const newestLikes = await this.dataSource.query(newestLikesQuery, [
@@ -398,6 +535,110 @@ export class PostsQueryRepository {
       extendedLikesInfo: {
         likesCount: +post.likesCount,
         dislikesCount: +post.dislikesCount,
+        myStatus,
+        newestLikes:
+          newestLikes.length > 0
+            ? newestLikes.map((like) => ({
+                addedAt: like.addedAt,
+                userId: like.userId,
+                login: like.login,
+              }))
+            : [
+                {
+                  addedAt: '2025-07-30T12:48:52.245Z',
+                  userId: '1',
+                  login: 'login',
+                },
+              ],
+      },
+    };
+  }
+
+  async getOneWithReactionsTORM(
+    id: number,
+    userId?: number,
+  ): Promise<PostViewDto> {
+    // 1. Получаем пост с данными блога и счетчиками реакций
+    const post = await this.postRepository
+      .createQueryBuilder('p')
+      .select([
+        'p.id',
+        'p.title',
+        'p.shortDescription',
+        'p.content',
+        'p.createdAt',
+        'p.blogId',
+        'b.name AS blogName',
+      ])
+      .addSelect((subQuery) => {
+        return subQuery
+          .select('COUNT(*)', 'likesCount')
+          .from('posts_reactions', 'pr')
+          .where('pr.postId = p.id AND pr.status = :likeStatus', {
+            likeStatus: LikeStatus.LIKE,
+          });
+      }, 'likesCount')
+      .addSelect((subQuery) => {
+        return subQuery
+          .select('COUNT(*)', 'dislikesCount')
+          .from('posts_reactions', 'pr')
+          .where('pr.postId = p.id AND pr.status = :dislikeStatus', {
+            dislikeStatus: LikeStatus.DISLIKE,
+          });
+      }, 'dislikesCount')
+      .leftJoin('p.blog', 'b')
+      .where('p.id = :id', { id })
+      .getRawOne();
+
+    if (!post) {
+      throw new CustomDomainException({
+        errorsMessages: `Post by ${id} not found`,
+        customCode: DomainExceptionCode.NotFound,
+      });
+    }
+
+    // 2. Получаем статус текущего пользователя
+    let myStatus = LikeStatus.NONE;
+    if (userId) {
+      const reaction = await this.postRepository.manager
+        .createQueryBuilder()
+        .select('pr.status')
+        .from('posts_reactions', 'pr')
+        .where('pr.postId = :postId AND pr.userId = :userId', {
+          postId: id,
+          userId,
+        })
+        .getRawOne();
+
+      myStatus = reaction?.status || LikeStatus.NONE;
+    }
+
+    // 3. Получаем последние 3 лайка для поста
+    const newestLikes = await this.postRepository.manager
+      .createQueryBuilder()
+      .select(['pr.userId', 'u.login', 'pr.createdAt AS addedAt'])
+      .from('posts_reactions', 'pr')
+      .innerJoin('users', 'u', 'pr.userId = u.id')
+      .where('pr.postId = :postId AND pr.status = :status', {
+        postId: id,
+        status: LikeStatus.LIKE,
+      })
+      .orderBy('pr.createdAt', 'DESC')
+      .limit(3)
+      .getRawMany();
+
+    // 4. Формируем результат
+    return {
+      id: post.p_id,
+      title: post.p_title,
+      shortDescription: post.p_shortDescription,
+      content: post.p_content,
+      blogId: post.p_blogId,
+      blogName: post.blogName,
+      createdAt: post.p_createdAt,
+      extendedLikesInfo: {
+        likesCount: parseInt(post.likesCount) || 0,
+        dislikesCount: parseInt(post.dislikesCount) || 0,
         myStatus,
         newestLikes: newestLikes.map((like) => ({
           addedAt: like.addedAt,

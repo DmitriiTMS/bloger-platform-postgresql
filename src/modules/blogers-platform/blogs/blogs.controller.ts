@@ -27,6 +27,7 @@ import { PostsService } from '../posts/posts.service';
 import { UpdatePostByBlogId } from '../posts/types/posts-types';
 import { GetBlogsQueryParams } from './paginate/get-blogs-query-params';
 import { GetPostsQueryParams } from '../posts/paginate/get-posts-query-params.input-dto';
+import { BlogsQueryTORMRepository } from './repositories/blogs-query-TORM.repository';
 
 @UseGuards(BasicAuthGuard)
 @Controller('sa/blogs')
@@ -36,6 +37,7 @@ export class BlogsController {
     private postsService: PostsService,
     private blogsQueryRepository: BlogsQueryRepository,
     private postsQueryRepository: PostsQueryRepository,
+    private blogsQueryTORMRepository: BlogsQueryTORMRepository
   ) {}
 
   @Get()
@@ -58,7 +60,8 @@ export class BlogsController {
   @HttpCode(HttpStatus.CREATED)
   async createBlog(@Body() body: CreateBlogDto): Promise<Blog> {
     const blogId = await this.blogsService.createBlog(body);
-    return await this.blogsQueryRepository.getOne(blogId);
+    // return await this.blogsQueryRepository.getOne(blogId);
+    return await this.blogsQueryTORMRepository.getOne(blogId);
   }
 
   @Put(':id')
@@ -86,7 +89,8 @@ export class BlogsController {
       param.blogId,
       body,
     );
-    return await this.postsQueryRepository.getOneWithReactions(postId);
+    // return await this.postsQueryRepository.getOneWithReactions(postId);
+    return await this.postsQueryRepository.getOneWithReactionsTORM(postId);
   }
 
   @Put(':blogId/posts/:postId')

@@ -35,9 +35,10 @@ export class PublicPostsController {
   @Get()
   @UseGuards(AuthorizationCheckGuard)
   @HttpCode(HttpStatus.OK)
-  async getAllPosts( 
+  async getAllPosts(
     @Query() query: GetPostsQueryParams,
-    @ExtractUserIfExistsFromRequest() user: { userId: number }) {
+    @ExtractUserIfExistsFromRequest() user: { userId: number },
+  ) {
     return await this.postsQueryRepository.getAllPosts(query, user?.userId);
   }
 
@@ -46,10 +47,13 @@ export class PublicPostsController {
   @HttpCode(HttpStatus.OK)
   async getPostById(
     @Param() param: IdParamPostDto,
-     @ExtractUserIfExistsFromRequest() user: { userId: number }
+    @ExtractUserIfExistsFromRequest() user: { userId: number },
   ) {
     await this.postsQueryRepository.getPostByIdOrNotFoundFail(param.id);
-    return await this.postsQueryRepository.getOneWithReactions(param.id, user?.userId);
+    return await this.postsQueryRepository.getOneWithReactions(
+      param.id,
+      user?.userId,
+    );
   }
 
   @Post(':postId/comments')
@@ -81,26 +85,24 @@ export class PublicPostsController {
       status: body.likeStatus,
       postId: param.postId,
       userId: user.userId,
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
     };
 
     await this.postsService.addReaction(postDataReactionDto);
   }
 
-  
   @Get(':postId/comments')
   @UseGuards(AuthorizationCheckGuard)
   @HttpCode(HttpStatus.OK)
   async getAllCommentsByPostId(
     @Param() param: PostIdParamDto,
     @Query() query: GetPostsQueryParams,
-    @ExtractUserIfExistsFromRequest() user: { userId: number }
+    @ExtractUserIfExistsFromRequest() user: { userId: number },
   ) {
-
     return await this.postsQueryRepository.getAllCommentsByPostId(
       param.postId,
       query,
-      user?.userId
+      user?.userId,
     );
   }
 

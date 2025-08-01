@@ -77,14 +77,14 @@ const adapters = [
       },
       inject: [ConfigService],
     }),
-    // ThrottlerModule.forRoot({
-    //   throttlers: [
-    //     {
-    //       ttl: 10000, // Время окна в секундах
-    //       limit: 5, // Максимум 5 запросов
-    //     },
-    //   ],
-    // }),
+    ThrottlerModule.forRoot({
+      throttlers: [
+        {
+          ttl: 10000, // Время окна в секундах
+          limit: 5, // Максимум 5 запросов
+        },
+      ],
+    }),
     TypeOrmModule.forFeature([User, EmailConfirmation, RefreshTokens, Devices])
   ],
   controllers: [UsersController, AuthController, DevicesController],

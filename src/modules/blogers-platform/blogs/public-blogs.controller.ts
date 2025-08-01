@@ -26,7 +26,7 @@ export class PublicBlogsController {
   @Get()
   @HttpCode(HttpStatus.OK)
   async getAllBlogs(@Query() query: GetBlogsQueryParams) {
-    return await this.blogsQueryRepository.getAll(query);
+    return await this.blogsQueryRepository.getAllTORM(query);
   }
 
   @Get(':blogId/posts')
@@ -38,7 +38,7 @@ export class PublicBlogsController {
      @ExtractUserIfExistsFromRequest() user: { userId: number },
   ) {
     await this.blogsQueryRepository.getBlogByIdOrNotFoundFail(param.blogId);
-    return await this.postsQueryRepository.getAllPostsByblogId(
+    return await this.postsQueryRepository.getAllPostsByblogIdTORM(
       param.blogId,
       query,
       user?.userId,

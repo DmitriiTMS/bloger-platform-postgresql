@@ -12,6 +12,8 @@ import { CommentsRepository } from '../comments/comments.repository';
 import { NewComment } from '../comments/types/types-comments';
 import { PostDataReactionDto } from './dto/reaction/post-reaction-data.dto';
 import { LikeStatus } from '../types-reaction';
+import { BlogsTORMRepository } from '../blogs/repositories/blogsTORM.repository';
+import { PostsTORMRepository } from './repository/posts-TORM.repository';
 
 @Injectable()
 export class PostsService {
@@ -20,30 +22,34 @@ export class PostsService {
     private postsRepository: PostsRepository,
     private usersRepository: UsersRepository,
     private commentRepository: CommentsRepository,
+    private blogsTORMRepository: BlogsTORMRepository,
+    private postsTORMRepository: PostsTORMRepository
   ) {}
 
   async createPost(postData: {
     blogId: number;
     postByBlogIdDto: CreatePostDto;
   }): Promise<number> {
-    const blog = await this.blogsRepository.getBlogByIdOrNotFoundFail(
-      postData.blogId,
-    );
+    // const blog = await this.blogsRepository.getBlogByIdOrNotFoundFail(postData.blogId);
+    const blog = await this.blogsTORMRepository.getBlogByIdOrNotFoundFail(postData.blogId);
 
-    const post: Post = {
+    const post = {
       title: postData.postByBlogIdDto.title,
       shortDescription: postData.postByBlogIdDto.shortDescription,
       content: postData.postByBlogIdDto.content,
-      createdAt: new Date().toISOString(),
       blogId: blog.id,
     };
 
-    const postId = await this.postsRepository.save(post);
+    // const postId = await this.postsRepository.save(post);
+    const postId = await this.postsTORMRepository.save(post);
     return postId;
   }
 
   async updatePostBYBlogId(dataForUpdatePost: UpdatePostByBlogId) {
-    await this.blogsRepository.getBlogByIdOrNotFoundFail(
+    // await this.blogsRepository.getBlogByIdOrNotFoundFail(
+    //   dataForUpdatePost.blogId,
+    // );
+     await this.blogsTORMRepository.getBlogByIdOrNotFoundFail(
       dataForUpdatePost.blogId,
     );
     await this.postsRepository.getPostByIdOrNotFoundFail(

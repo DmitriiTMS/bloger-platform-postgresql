@@ -12,6 +12,9 @@ import { User } from './modules/users/users/entitys/users.entity';
 import { EmailConfirmation } from './modules/users/users/entitys/email-confirmations.entity';
 import { RefreshTokens } from './modules/users/auth/entyties/refresh-token.entity';
 import { Devices } from './modules/users/devices/entities/devices.entity';
+import { Blog } from './modules/blogers-platform/blogs/entitys/blog.entity';
+import { Post } from './modules/blogers-platform/posts/entity/post.entity';
+import { PostsReactions } from './modules/blogers-platform/posts/entity/posts_reactions.entity';
 
 @Module({
   imports: [CoreModule, configModule],
@@ -35,7 +38,7 @@ export class AppModule {
             username: coreConfig.db_username,
             password: coreConfig.db_password,
             database: coreConfig.db_name,
-            entities: [User, EmailConfirmation, RefreshTokens, Devices],
+            entities: [User, EmailConfirmation, RefreshTokens, Devices, Blog, Post, PostsReactions],
             autoLoadEntities: true,
             synchronize: true,
             logging: true,
