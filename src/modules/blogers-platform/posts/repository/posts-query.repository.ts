@@ -411,22 +411,16 @@ export class PostsQueryRepository {
     const items = posts.map((post) => ({
       id: post.id.toString(),
       title: post.title,
-      content: post.content,
       shortDescription: post.shortDescription,
+      content: post.content,
       blogId: post.blogId.toString(),
       blogName: post.blogName,
       createdAt: post.createdAt,
       extendedLikesInfo: {
-        likesCount: post.likesCount,
-        dislikesCount: post.dislikesCount,
+        likesCount: parseInt(post.likesCount),
+        dislikesCount: parseInt(post.dislikesCount),
         myStatus: reactionDictionary[post.id] || LikeStatus.NONE,
-        newestLikes: newestLikesByPost[post.id] || [
-          {
-            addedAt: '2025-07-30T12:48:52.245Z',
-            userId: '1',
-            login: 'login',
-          },
-        ],
+        newestLikes: newestLikesByPost[post.id] || []
       },
     }));
 
@@ -484,6 +478,8 @@ export class PostsQueryRepository {
     `;
     const [post] = await this.dataSource.query(postQuery, [id]);
 
+    console.log(post);
+
     if (!post) {
       throw new CustomDomainException({
         errorsMessages: `Post by ${id} not found`,
@@ -525,31 +521,22 @@ export class PostsQueryRepository {
 
     // 4. Формируем результат
     return {
-      id: post.id,
+      id: post.id.toString(),
       title: post.title,
       shortDescription: post.shortDescription,
       content: post.content,
-      blogId: post.blogId,
+      blogId: post.blogId.toString(),
       blogName: post.blogName,
       createdAt: post.createdAt,
       extendedLikesInfo: {
         likesCount: +post.likesCount,
         dislikesCount: +post.dislikesCount,
         myStatus,
-        newestLikes:
-          newestLikes.length > 0
-            ? newestLikes.map((like) => ({
-                addedAt: like.addedAt,
-                userId: like.userId,
-                login: like.login,
-              }))
-            : [
-                {
-                  addedAt: '2025-07-30T12:48:52.245Z',
-                  userId: '1',
-                  login: 'login',
-                },
-              ],
+        newestLikes: newestLikes.map((like) => ({
+          addedAt: like.addedAt,
+          userId: like.userId.toString(),
+          login: like.login,
+        })),
       },
     };
   }
@@ -568,7 +555,7 @@ export class PostsQueryRepository {
         'p.content',
         'p.createdAt',
         'p.blogId',
-        'b.name AS blogName',
+        'b.name',
       ])
       .addSelect((subQuery) => {
         return subQuery
@@ -589,6 +576,8 @@ export class PostsQueryRepository {
       .leftJoin('p.blog', 'b')
       .where('p.id = :id', { id })
       .getRawOne();
+
+    console.log(post);
 
     if (!post) {
       throw new CustomDomainException({
@@ -629,22 +618,23 @@ export class PostsQueryRepository {
 
     // 4. Формируем результат
     return {
-      id: post.p_id,
+      id: post.p_id.toString(),
       title: post.p_title,
       shortDescription: post.p_shortDescription,
       content: post.p_content,
-      blogId: post.p_blogId,
-      blogName: post.blogName,
+      blogId: post.p_blogId.toString(),
+      blogName: post.b_name,
       createdAt: post.p_createdAt,
       extendedLikesInfo: {
         likesCount: parseInt(post.likesCount) || 0,
         dislikesCount: parseInt(post.dislikesCount) || 0,
         myStatus,
         newestLikes: newestLikes.map((like) => ({
-          addedAt: like.addedAt,
-          userId: like.userId,
-          login: like.login,
-        })),
+                addedAt: like.addedAt,
+                userId: like.userId.toString(),
+                login: like.login,
+              }))
+        
       },
     };
   }
