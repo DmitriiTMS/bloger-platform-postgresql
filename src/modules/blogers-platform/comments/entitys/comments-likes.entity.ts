@@ -11,6 +11,6 @@ export class CommentLikes extends BaseEntity {
   user_id: number;
 
   @Column({ type: 'varchar' })
-  statusn: string;
+  status: string;
 
 }
