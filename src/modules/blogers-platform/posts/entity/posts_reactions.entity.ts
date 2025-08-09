@@ -16,7 +16,7 @@ export class PostsReactions extends BaseEntity {
 
   @ManyToOne(() => Post, (post) => post.postsReactions, { onDelete: 'CASCADE' })
   @JoinColumn()
-  public post: Post;
+  post: Post;
 
   @ManyToOne(() => User, (user) => user.postsReactions) // или другое имя, если нужно
   @JoinColumn({ name: 'userId' }) // связываем с колонкой `userId`

@@ -9,12 +9,12 @@ import { DomainExceptionCode } from '../../../setup/exceptions/filters/constants
 export class CommentsRepository {
   constructor(@InjectDataSource() private dataSource: DataSource) {}
 
-  async save(newComment: NewComment) {
+  async save(newComment) {
     const query = `
         INSERT INTO "comments"
-            ("post_id", "content", "user_id", "user_login", "created_at", "likes_count", "dislikes_count")
+            ("post_id", "content", "user_id", "user_login", "likes_count", "dislikes_count")
         VALUES
-            ($1, $2, $3, $4, $5::timestamp with time zone, $6, $7)
+            ($1, $2, $3, $4, $5, $6)
         RETURNING *
     `;
 
@@ -23,7 +23,7 @@ export class CommentsRepository {
       newComment.content,
       newComment.userId,
       newComment.userLogin,
-      newComment.createdAt,
+      // newComment.createdAt,
       newComment.likesCount,
       newComment.dislikesCount,
     ]);
@@ -33,14 +33,14 @@ export class CommentsRepository {
     }
 
     const res = {
-      id: result[0].id,
+      id: result[0].id.toString(),
       postId: result[0].post_id,
       content: result[0].content,
       userId: result[0].user_id,
       userLogin: result[0].user_login,
-      createdAt: result[0].created_at,
-      likesCount: result[0].likes_count,
-      dislikesCount: result[0].dislikes_count,
+      createdAt: result[0].createdAt,
+      likesCount: parseInt(result[0].likes_count),
+      dislikesCount: parseInt(result[0].dislikes_count),
     };
 
     return res;
@@ -58,14 +58,14 @@ export class CommentsRepository {
     }
 
     const res = {
-      id: comment[0].id,
+      id: comment[0].id.toString(),
       postId: comment[0].post_id,
       content: comment[0].content,
       userId: comment[0].user_id,
       userLogin: comment[0].user_login,
-      createdAt: comment[0].created_at,
-      likesCount: comment[0].likes_count,
-      dislikesCount: comment[0].dislikes_count,
+      createdAt: comment[0].createdAt,
+      likesCount: parseInt(comment[0].likes_count),
+      dislikesCount: parseInt(comment[0].dislikes_count),
     };
 
     return res;

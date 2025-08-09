@@ -108,7 +108,7 @@ export class PublicPostsController {
 
   mapCommentDBToCommentView(comment: NewCommentDB) {
     return {
-      id: comment.id,
+      id: comment.id.toString(),
       content: comment.content,
       commentatorInfo: {
         userId: String(comment.userId),

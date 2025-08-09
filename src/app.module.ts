@@ -15,6 +15,8 @@ import { Devices } from './modules/users/devices/entities/devices.entity';
 import { Blog } from './modules/blogers-platform/blogs/entitys/blog.entity';
 import { Post } from './modules/blogers-platform/posts/entity/post.entity';
 import { PostsReactions } from './modules/blogers-platform/posts/entity/posts_reactions.entity';
+import { Comments } from './modules/blogers-platform/comments/entitys/comments.entitys';
+import { CommentLikes } from './modules/blogers-platform/comments/entitys/comments-likes.entity';
 
 @Module({
   imports: [CoreModule, configModule],
@@ -38,11 +40,21 @@ export class AppModule {
             username: coreConfig.db_username,
             password: coreConfig.db_password,
             database: coreConfig.db_name,
-            entities: [User, EmailConfirmation, RefreshTokens, Devices, Blog, Post, PostsReactions],
+            entities: [
+              User,
+              EmailConfirmation,
+              RefreshTokens,
+              Devices,
+              Blog,
+              Post,
+              PostsReactions,
+              Comments,
+              CommentLikes,
+            ],
             autoLoadEntities: true,
             synchronize: true,
             logging: true,
-            logger: 'formatted-console'
+            logger: 'formatted-console',
             // ssl: true, ДЛЯ ПОДКЛЮЧЕНИЯ К Neon
             // extra: {
             //   ssl: {

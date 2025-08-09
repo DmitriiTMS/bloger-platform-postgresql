@@ -37,6 +37,9 @@ export class CommentsService {
     const { commentId } = deleteCommentDto;
 
     const isExistUserComment = await this.isExistUserComment(deleteCommentDto);
+    console.log(!isExistUserComment);
+    
+
     if (!isExistUserComment) {
       throw new CustomDomainException({
         errorsMessages: 'Пользователь пытается удалить не свой комментарий',
@@ -120,7 +123,10 @@ export class CommentsService {
     const comment =
       await this.commentsRepository.getCommentByIdOrNotFoundFail(commentId);
 
-    if (comment.userId !== +userId) {
+      console.log(comment.userId);
+      console.log(userId);
+      
+    if (comment.userId.toString() !== userId.toString()) {
       return false;
     }
     return true;

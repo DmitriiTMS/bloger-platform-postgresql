@@ -85,12 +85,12 @@ export class PostsService {
       });
     }
 
-    const newComment: NewComment = {
+    const newComment = {
       postId: postId,
       content,
       userId,
       userLogin: user[0].login,
-      createdAt: new Date().toISOString(),
+      // createdAt: new Date().toISOString(),
       likesCount: 0,
       dislikesCount: 0,
     };

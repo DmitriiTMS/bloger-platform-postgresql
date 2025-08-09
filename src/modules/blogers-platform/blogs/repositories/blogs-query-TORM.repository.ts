@@ -25,9 +25,6 @@ export class BlogsQueryTORMRepository {
       },
     });
 
-    console.log(blog);
-    
-
     if (!blog) {
       throw new CustomDomainException({
         errorsMessages: `Blog by ${blogId} not found`,

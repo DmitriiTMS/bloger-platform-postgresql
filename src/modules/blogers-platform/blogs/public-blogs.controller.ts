@@ -38,7 +38,7 @@ export class PublicBlogsController {
      @ExtractUserIfExistsFromRequest() user: { userId: number },
   ) {
     await this.blogsQueryRepository.getBlogByIdOrNotFoundFail(param.blogId);
-    return await this.postsQueryRepository.getAllPostsByblogIdTORM(
+    return await this.postsQueryRepository.getAllPostsByblogId(
       param.blogId,
       query,
       user?.userId,

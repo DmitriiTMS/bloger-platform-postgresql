@@ -100,7 +100,7 @@ export class CommentsController {
 
   mapToViewComment(commentDB: NewCommentDB, status: LikeStatus) {
     return {
-      id: commentDB.id,
+      id: commentDB.id.toString(),
       content: commentDB.content,
       commentatorInfo: {
         userId: String(commentDB.userId),

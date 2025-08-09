@@ -78,16 +78,16 @@ export class PostsRepository {
 
   async saveInPostReaction(postDataReactionDto: PostDataReactionDto) {
     const query = `INSERT INTO "posts_reactions"
-              ("postId", "userId", "status", "created_at")
+              ("postId", "userId", "status")
           VALUES
-              ($1, $2, $3, $4)
+              ($1, $2, $3)
       `;
 
     await this.dataSource.query(query, [
       postDataReactionDto.postId,
       postDataReactionDto.userId,
       postDataReactionDto.status,
-      postDataReactionDto.created_at,
+      // postDataReactionDto.created_at,
     ]);
   }
 

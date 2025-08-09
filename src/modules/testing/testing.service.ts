@@ -17,7 +17,7 @@ export class TestingService {
     await this.dataSource.query('TRUNCATE TABLE "posts" CASCADE');
     await this.dataSource.query('TRUNCATE TABLE "posts_reactions" CASCADE');
 
-    // await this.dataSource.query('TRUNCATE TABLE "comment_likes" CASCADE');
-    // await this.dataSource.query('TRUNCATE TABLE "comments" CASCADE');
+    await this.dataSource.query('TRUNCATE TABLE "comment_likes" CASCADE');
+    await this.dataSource.query('TRUNCATE TABLE "comments" CASCADE');
   }
 }

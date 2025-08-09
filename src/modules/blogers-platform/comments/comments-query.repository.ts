@@ -25,9 +25,9 @@ export class CommentsQueryRepository {
       content: comment[0].content,
       userId: comment[0].user_id,
       userLogin: comment[0].user_login,
-      createdAt: comment[0].created_at,
-      likesCount: comment[0].likes_count,
-      dislikesCount: comment[0].dislikes_count,
+      createdAt: comment[0].createdAt,
+      likesCount: parseInt(comment[0].likes_count),
+      dislikesCount: parseInt(comment[0].dislikes_count),
     };
 
     return res;

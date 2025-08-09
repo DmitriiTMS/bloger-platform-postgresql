@@ -111,8 +111,8 @@ export class PostsQueryRepository {
           newestLikesByPost[like.postId] = [];
         }
         newestLikesByPost[like.postId].push({
-          addedAt: like.created_at,
-          userId: like.userId,
+          addedAt: like.createdAt,
+          userId: like.userId.toString(),
           login: like.login,
         });
       });
@@ -132,13 +132,7 @@ export class PostsQueryRepository {
           likesCount: Number(post.likesCount), // Преобразуем в число
           dislikesCount: Number(post.dislikesCount), // Преобразуем в число
           myStatus: reactionDictionary[post.id] || LikeStatus.NONE,
-          newestLikes: newestLikesByPost[post.id] || [
-            {
-              addedAt: '2025-07-30T12:48:52.245Z',
-              userId: '1',
-              login: 'login',
-            },
-          ],
+          newestLikes: newestLikesByPost[post.id] || []
         },
       };
     });
@@ -401,7 +395,7 @@ export class PostsQueryRepository {
         }
         newestLikesByPost[like.postId].push({
           addedAt: like.createdAt,
-          userId: like.userId,
+          userId: like.userId.toString(),
           login: like.login,
         });
       });
@@ -661,7 +655,7 @@ export class PostsQueryRepository {
     let reactionDictionary: Record<string, LikeStatus> = {};
     if (userId) {
       const userReactions = await this.dataSource.query(
-        `SELECT "comment_id", status FROM "comment_likes"
+        `SELECT "comment_id", "status" FROM "comment_likes"
         WHERE "user_id" = $1 AND "comment_id" IN (
         SELECT id FROM comments WHERE "post_id" = $2
       )`,
@@ -682,7 +676,7 @@ export class PostsQueryRepository {
       content,
       user_id as "userId",
       user_login as "userLogin",
-      created_at as "createdAt",
+      "createdAt" as "createdAt",
       likes_count as "likesCount",
       dislikes_count as "dislikesCount"
     FROM comments
@@ -694,7 +688,7 @@ export class PostsQueryRepository {
 
     // 4. Добавить статус реакции пользователя
     const items = comments.map((comment) => ({
-      id: comment.id,
+      id: comment.id.toString(),
       content: comment.content,
       commentatorInfo: {
         userId: String(comment.userId), // Преобразуем в строку
@@ -859,14 +853,14 @@ export class PostsQueryRepository {
       // Основные поля комментариев
       id: 'id',
       content: 'content',
-      createdAt: 'created_at',
+      createdAt: '"createdAt"',
       userId: 'user_id',
       userLogin: 'user_login',
       likesCount: 'likes_count',
       dislikesCount: 'dislikesCount',
 
       // Дополнительные поля, если используются
-      updatedAt: 'updated_at',
+      updatedAt: 'updatedAt',
       postId: 'post_id',
     };
 
