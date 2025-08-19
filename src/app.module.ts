@@ -17,6 +17,8 @@ import { Post } from './modules/blogers-platform/posts/entity/post.entity';
 import { PostsReactions } from './modules/blogers-platform/posts/entity/posts_reactions.entity';
 import { Comments } from './modules/blogers-platform/comments/entitys/comments.entitys';
 import { CommentLikes } from './modules/blogers-platform/comments/entitys/comments-likes.entity';
+import { QuizModule } from './modules/quiz-module/quiz.module';
+import { Questions } from './modules/quiz-module/entitys/questions.entitys';
 
 @Module({
   imports: [CoreModule, configModule],
@@ -50,6 +52,7 @@ export class AppModule {
               PostsReactions,
               Comments,
               CommentLikes,
+              Questions
             ],
             autoLoadEntities: true,
             synchronize: true,
@@ -67,6 +70,7 @@ export class AppModule {
       }),
       BlogersPlatformModule,
       UsersModule,
+      QuizModule,
       TestingModule,
     ];
     return {
