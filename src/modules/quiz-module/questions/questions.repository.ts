@@ -7,6 +7,10 @@ import {
   QuestionResponseDB,
   QuestionResponseView,
 } from './types/questions-types';
+import { CustomDomainException } from 'src/setup/exceptions/custom-domain.exception';
+import { DomainExceptionCode } from 'src/setup/exceptions/filters/constants';
+import { DataForUpdateQuestion } from './types/data-update-body-and-answer';
+import { DataIsPublishQuestion } from './types/data-is-publish-question';
 
 @Injectable()
 export class QuestionsRepository {
@@ -22,6 +26,52 @@ export class QuestionsRepository {
     });
 
     return this.mapToView(question);
+  }
+
+  async getQuestionByIdOrNotFoundFail(id: number) {
+    const question = await this.questionsRepository.findOne({ where: { id } });
+
+    if (!question) {
+      throw new CustomDomainException({
+        errorsMessages: `Question by ${id} not found`,
+        customCode: DomainExceptionCode.NotFound,
+      });
+    }
+    return question;
+  }
+
+  async findById(id: number) {
+    return await this.questionsRepository.findOne({ where: { id } });
+  }
+
+  async updateQuestionBodyAndAnswer(dataForUpdateQuestion: DataForUpdateQuestion) {
+    await this.questionsRepository.update(
+      { id: dataForUpdateQuestion.id },
+      {
+        body: dataForUpdateQuestion.body,
+        correctAnswers: dataForUpdateQuestion.correctAnswers,
+      },
+    );
+  }
+
+  async updateQuestionIsPublished(dataForUpdateQuestion: DataIsPublishQuestion) {
+    await this.questionsRepository.update(
+      { id: dataForUpdateQuestion.id },
+      {
+        published: dataForUpdateQuestion.published,
+      },
+    );
+  }
+
+  async delete(id: number) {
+    const questionById = await this.findById(id);
+    if (!questionById) {
+      throw new CustomDomainException({
+        errorsMessages: `Question by ${id} not found`,
+        customCode: DomainExceptionCode.NotFound,
+      });
+    }
+    await this.questionsRepository.delete({ id });
   }
 
   private mapToView(question: QuestionResponseDB): QuestionResponseView {

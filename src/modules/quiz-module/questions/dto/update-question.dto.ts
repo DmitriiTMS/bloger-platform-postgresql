@@ -8,7 +8,7 @@ import {
 } from 'class-validator';
 import { Trim } from 'src/modules/users/users/decorators/dto-decorators/trim.decorator';
 
-export class CreateQuestionDto {
+export class UpdateQuestionDto {
   @IsString({ message: 'Body вопроса должно быть строкой' })
   @IsNotEmpty({ message: 'Body вопроса не может быть пустым' })
   @MinLength(10, { message: 'Минимальное количество символов 10' })
